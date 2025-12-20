@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UniHive - Buy & Sell</title>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #fefce8;
+      color: #333;
+      display: flex;
+      height: 100vh;
+      transition: background-color 0.3s ease;
+    }
+
+    body.dark-mode {
+      background-color: #121212;
+      color: #ffffff;
+    }
+
+    .dark-mode .navbar { background-color: #333; }
+    .dark-mode .sidebar { background-color: #1e1e1e; }
+    .dark-mode .sidebar a { color: #fff; }
+    .dark-mode .sidebar a:hover { background-color: #3a3a3a; }
+    .dark-mode .main { background-color: #1e1e1e; }
+    .dark-mode .card { background-color: #2a2a2a; color: #e5e7eb; }
+    .dark-mode .search-bar input,
+    .dark-mode .category-filter select {
+      background-color: #3a3a3a;
+      color: #fff;
+      border-color: #555;
+    }
+    .dark-mode .modal-content { background-color: #1e1e1e; }
+    .dark-mode .modal-content label,
+    .dark-mode .modal-content input,
+    .dark-mode .modal-content select,
+    .dark-mode .modal-content textarea {
+      color: #e5e7eb;
+      border-color: #555;
+    }
+    .dark-mode .contact-section { background-color: #2a2a2a; }
+    .dark-mode .success-message, .dark-mode .error-message { background-color: #14532d; color: #fff; }
+    .dark-mode .toggle-btn { background-color: #3a3a3a; }
+    .dark-mode .toggle-btn:hover { background-color: #4a4a4a; }
+    .dark-mode .sold-badge { background-color: #14532d; }
+    .dark-mode .action-btn { background-color: #3a3a3a; }
+    .dark-mode .action-btn:hover { background-color: #4a4a4a; }
+
+    .navbar {
+      background-color: #ca8a04;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: fixed;
+      width: 100%;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .navbar h1 { font-size: 1.8rem; margin: 0; }
+    .navbar .logo { font-weight: bold; letter-spacing: 1px; }
+    .navbar .user-info { display: flex; align-items: center; gap: 1rem; }
+
+    .notification-icon {
+      font-size: 1.6rem;
+      color: #facc15;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.2s;
+    }
+    .notification-icon:hover { transform: scale(1.1); }
+    .notification-icon span {
+      background: #ef4444;
+      color: white;
+      border-radius: 50%;
+      padding: 0.2rem 0.5rem;
+      font-size: 0.8rem;
+      position: absolute;
+      top: -8px;
+      right: -8px;
+    }
+
+    .notification-dropdown {
+      display: none;
+      position: absolute;
+      right: 2rem;
+      top: 4.5rem;
+      background: white;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      max-height: 200px;
+      overflow-y: auto;
+      animation: fadeIn 0.2s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .notification-dropdown h3 {
+      margin: 0 0 0.5rem;
+      color: #ca8a04;
+      font-size: 1.1rem;
+    }
+    .notification-dropdown ul { list-style: none; padding: 0; margin: 0; }
+    .notification-dropdown li {
+      padding: 0.5rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .notification-dropdown li:hover { background-color: #f3f4f6; }
+    .notification-dropdown li.unread { font-weight: bold; color: #ca8a04; }
+
+    .sidebar {
+      background-color: #facc15;
+      width: 250px;
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      height: 100vh;
+      position: fixed;
+      top: 4rem;
+      left: -250px;
+      transition: left 0.3s ease;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+      z-index: 99;
+    }
+
+    .sidebar.open { left: 0; }
+    .sidebar h2 {
+      font-size: 1.6rem;
+      color: #78350f;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .sidebar a {
+      text-decoration: none;
+      color: #78350f;
+      font-weight: 600;
+      padding: 0.7rem 1rem;
+      border-radius: 8px;
+      transition: background 0.3s, color 0.3s;
+    }
+    .sidebar a:hover,
+    .sidebar a.active { background-color: #fde68a; color: #78350f; }
+    .sidebar .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 30px;
+      color: #78350f;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .sidebar .close-btn:hover { transform: rotate(90deg); }
+
+    .main {
+      margin-left: 0;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      overflow-y: auto;
+      overflow-x: visible;
+      transition: margin-left 0.3s ease;
+      margin-top: 4rem;
+      position: relative;
+      z-index: 1;
+    }
+    .main.open { margin-left: 250px; }
+    .main h1 {
+      font-size: 2.2rem;
+      margin-bottom: 1.5rem;
+      color: #ca8a04;
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    .toggle-btn {
+      position: fixed;
+      top: 1.2rem;
+      left: 1rem;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      background-color: #facc15;
+      border: none;
+      border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+      z-index: 101;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 0;
+    }
+    .toggle-btn .hamburger-line {
+      width: 24px;
+      height: 3px;
+      background-color: #fff;
+      margin: 3px 0;
+      transition: background-color 0.3s;
+    }
+    .toggle-btn:hover {
+      background-color: #f59e0b;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    .toggle-btn:focus {
+      outline: 2px solid #ca8a04;
+      outline-offset: 2px;
+    }
+    .dark-mode .toggle-btn { background-color: #3a3a3a; }
+    .dark-mode .toggle-btn:hover { background-color: #4a4a4a; }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .list-btn {
+      padding: 0.8rem 1.8rem;
+      background-color: #facc15;
+      color: #78350f;
+      border: 2px solid #ca8a04;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+    .list-btn:hover {
+      background-color: #f59e0b;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+    }
+    .list-btn:disabled {
+      background-color: #d1d5db;
+      color: #6b7280;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .dark-mode .list-btn { background-color: #facc15; }
+    .dark-mode .list-btn:hover { background-color: #f59e0b; }
+
+    .search-filter {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .search-bar input,
+    .category-filter select {
+      padding: 0.7rem;
+      font-size: 1rem;
+      border: 2px solid #d1d5db;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 200px;
+      transition: border-color 0.3s, box-shadow 0.3s, background-color 0.3s;
+      background-color: #fff;
+    }
+    .search-bar input:focus,
+    .category-filter select:focus {
+      border-color: #ca8a04;
+      box-shadow: 0 0 10px rgba(202, 138, 4, 0.3);
+      outline: none;
+    }
+    .category-filter select {
+      appearance: none;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2378350f' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E") no-repeat right 0.7rem center/1rem;
+      cursor: pointer;
+    }
+    .category-filter select:hover { background-color: #f9fafb; }
+    .dark-mode .category-filter select:hover { background-color: #4a4a4a; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+      justify-content: center;
+    }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      width: 250px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+      position: relative;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+    }
+    .card img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      transition: opacity 0.3s;
+    }
+    .card img:hover { opacity: 0.9; }
+    .card img.error {
+      background: #d1d5db;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #6b7280;
+      font-size: 0.9rem;
+    }
+    .card h3 {
+      font-size: 1.3rem;
+      margin-bottom: 0.7rem;
+      color: #4b5563;
+    }
+    .card .price {
+      font-weight: bold;
+      color: #ca8a04;
+      font-size: 1.2rem;
+      margin-bottom: 0.5rem;
+    }
+    .card p.category {
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+    .card p.description {
+      font-style: italic;
+      margin-bottom: 1rem;
+    }
+    .card .contact-btn,
+    .card .action-btn {
+      display: block;
+      padding: 0.6rem 1.2rem;
+      background-color: #facc15;
+      color: #78350f;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: background 0.3s, transform 0.2s;
+      cursor: pointer;
+      text-align: center;
+      margin-top: 0.5rem;
+      width: 100%;
+      border: none;
+    }
+    .card .contact-btn:hover,
+    .card .action-btn:hover {
+      background-color: #fde68a;
+      transform: translateY(-2px);
+    }
+    .card .sold-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: #22c55e;
+      color: white;
+      padding: 0.3rem 0.7rem;
+      border-radius: 5px;
+      font-size: 0.9rem;
+    }
+    .contact-section {
+      display: none;
+      background: #f9fafb;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-top: 1rem;
+      font-size: 0.95rem;
+      animation: slideDown 0.3s ease-out;
+    }
+    .contact-section.open { display: block; }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .contact-section p { margin: 0.3rem 0; color: #4b5563; }
+
+    .success-message, .error-message {
+      display: none;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      font-weight: 600;
+      animation: fadeIn 0.5s ease-in;
+    }
+    .success-message.show, .error-message.show { display: block; }
+    .success-message { background-color: #22c55e; color: white; }
+    .error-message { background-color: #ef4444; color: white; }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 200;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .modal.open {
+      display: flex;
+      opacity: 1;
+    }
+    .modal-content {
+      background-color: #fefce8;
+      padding: 2rem;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 500px;
+      position: relative;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      animation: slideUp 0.3s ease-out;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-content .close-icon {
+      position: absolute;
+      top: 1rem;
+      right: 1.5rem;
+      font-size: 1.8rem;
+      color: #78350f;
+      cursor: pointer;
+      transition: color 0.2s, transform 0.2s;
+    }
+    .modal-content .close-icon:hover {
+      color: #ca8a04;
+      transform: rotate(90deg);
+    }
+    .modal-content h2 {
+      font-size: 1.8rem;
+      color: #ca8a04;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    .modal-content form { display: grid; gap: 1.2rem; }
+    .modal-content label {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #4b5563;
+    }
+    .modal-content input,
+    .modal-content select,
+    .modal-content textarea {
+      width: 100%;
+      padding: 0.8rem;
+      border: 2px solid #d1d5db;
+      border-radius: 10px;
+      font-size: 1rem;
+      background-color: #fff;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .modal-content input:focus,
+    .modal-content select:focus,
+    .modal-content textarea:focus {
+      border-color: #ca8a04;
+      box-shadow: 0 0 10px rgba(202, 138, 4, 0.3);
+      outline: none;
+    }
+    .modal-content textarea { resize: vertical; min-height: 100px; }
+    .modal-content .btn-group {
+      display: flex;
+      gap: 1.2rem;
+      justify-content: flex-end;
+      margin-top: 1.5rem;
+    }
+    .modal-content button {
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+    }
+    .modal-content .submit-btn { background-color: #facc15; color: #78350f; }
+    .modal-content .submit-btn:hover {
+      background-color: #f59e0b;
+      transform: translateY(-2px);
+    }
+    .modal-content .submit-btn:disabled {
+      background-color: #d1d5db;
+      color: #6b7280;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .modal-content .cancel-btn { background-color: #e5e7eb; color: #4b5563; }
+    .modal-content .cancel-btn:hover {
+      background-color: #d1d5db;
+      transform: translateY(-2px);
+    }
+    .image-preview {
+      margin-top: 0.5rem;
+      max-width: 100%;
+      max-height: 150px;
+      border-radius: 8px;
+      display: none;
+    }
+    .image-preview.show { display: block; }
+
+    .tooltip { position: relative; display: inline-block; }
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 120px;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 0.3rem 0.5rem;
+      position: absolute;
+      z-index: 300;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -60px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
+
+    @media (max-width: 768px) {
+      .navbar { padding: 1rem; }
+      .navbar h1 { font-size: 1.5rem; }
+      .sidebar { width: 100%; left: -100%; }
+      .main { padding: 1.5rem; }
+      .main.open { margin-left: 0; }
+      .main h1 { font-size: 1.8rem; }
+      .toggle-btn { width: 36px; height: 36px; top: 1rem; left: 0.8rem; }
+      .toggle-btn .hamburger-line { width: 20px; height: 2px; margin: 2px 0; }
+      .list-btn { padding: 0.6rem 1.2rem; font-size: 1rem; }
+      .search-filter { flex-direction: column; }
+      .search-bar input,
+      .category-filter select { max-width: 100%; }
+      .modal-content { margin: 1rem; padding: 1.5rem; max-width: 90%; }
+      .modal-content h2 { font-size: 1.5rem; }
+      .card .contact-btn, .card .action-btn { padding: 0.6rem; font-size: 0.95rem; }
+      .image-preview { max-height: 100px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <h1 class="logo">UniHive 🐝</h1>
+    <div class="user-info">
+      <div class="tooltip notification-icon" onclick="toggleNotifications()">
+        🔔 <span id="notification-count">0</span>
+        <span class="tooltiptext">View Notifications</span>
+      </div>
+      <span id="username-display" aria-live="polite">👤 Loading...</span>
+      <button onclick="toggleDarkMode()" class="tooltip" aria-label="Toggle Dark Mode">
+        🌙 <span class="tooltiptext">Toggle Dark Mode</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="notification-dropdown" class="notification-dropdown">
+    <h3>Notifications</h3>
+    <ul id="notification-list"></ul>
+  </div>
+
+  <div id="mySidenav" class="sidebar">
+    <span class="close-btn" onclick="toggleSidebar()">×</span>
+    <h2>🐝 UniHive</h2>
+    <a href="dashboard.html">Home</a>
+    <a href="buy-sell.html" class="active">Buy & Sell</a>
+    <a href="discuss.html">Discussion Forum</a>
+    <a href="events.html">Events</a>
+    <a href="clubs.html">Clubs</a>
+    <a href="elibrary.html">Library</a>
+    <a href="#" onclick="firebase.auth().signOut()">Logout</a>
+  </div>
+
+  <div class="main">
+    <div class="success-message" id="success-message"></div>
+    <div class="error-message" id="error-message"></div>
+    <button class="toggle-btn tooltip" onclick="toggleSidebar()" aria-label="Toggle Menu">
+      <div class="hamburger-line"></div>
+      <div class="hamburger-line"></div>
+      <div class="hamburger-line"></div>
+      <span class="tooltiptext">Open Menu</span>
+    </button>
+    <div class="header">
+      <h1>Buy & Sell</h1>
+      <button class="list-btn tooltip" onclick="openModal('new')" aria-label="List New Item" disabled>
+        List New Item <span class="tooltiptext">Add a new item for sale</span>
+      </button>
+    </div>
+
+    <div class="search-filter">
+      <div class="search-bar">
+        <input type="text" id="search-input" placeholder="Search items..." aria-label="Search items" />
+      </div>
+      <div class="category-filter">
+        <select id="category-filter" aria-label="Filter by category">
+          <option value="all">All Categories</option>
+          <option value="Books">Books</option>
+          <option value="Electronics">Electronics</option>
+          <option value="Furniture">Furniture</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid" id="item-grid"></div>
+
+    <div class="modal" id="list-item-modal" role="dialog" aria-labelledby="modal-title">
+      <div class="modal-content">
+        <span class="close-icon" onclick="closeModal()" aria-label="Close Modal">×</span>
+        <h2 id="modal-title">List New Item 🐝</h2>
+        <form id="list-item-form">
+          <input type="hidden" id="edit-item-id">
+          <div>
+            <label for="item-title">Title</label>
+            <input type="text" id="item-title" placeholder="e.g., Calculus Textbook" required aria-required="true" />
+          </div>
+          <div>
+            <label for="item-price">Price (₹)</label>
+            <input type="number" id="item-price" placeholder="e.g., 500" required aria-required="true" min="1" />
+          </div>
+          <div>
+            <label for="item-category">Category</label>
+            <select id="item-category" required aria-required="true">
+              <option value="" disabled selected>Select a category</option>
+              <option value="Books">Books</option>
+              <option value="Electronics">Electronics</option>
+              <option value="Furniture">Furniture</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label for="item-description">Description</label>
+            <textarea id="item-description" placeholder="Describe your item..."></textarea>
+          </div>
+          <div>
+            <label for="item-image">Upload Image</label>
+            <input type="file" id="item-image" accept="image/*" aria-label="Upload item image" />
+            <img id="image-preview" class="image-preview" alt="Image preview" />
+          </div>
+          <div class="btn-group">
+            <button type="button" class="cancel-btn" onclick="closeModal()">Cancel</button>
+            <button type="button" class="submit-btn" onclick="submitItem()">Submit</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyBnPy5bVzYj53TpBfeXIM--aLue4qgLJtU",
+      authDomain: "unihive-a8959.firebaseapp.com",
+      projectId: "unihive-a8959",
+      storageBucket: "unihive-a8959.appspot.com",
+      messagingSenderId: "19484479047",
+      appId: "1:19484479047:web:b8b61a81d65fe479d5ab62",
+      measurementId: "G-3SNN0K0BV2"
+    };
+
+    let auth, db, storage;
+    try {
+      firebase.initializeApp(firebaseConfig);
+      auth = firebase.auth();
+      db = firebase.firestore();
+      storage = firebase.storage();
+      db.enablePersistence().catch(error => {
+        console.warn("Firestore offline persistence failed:", error);
+      });
+    } catch (error) {
+      console.error("Firebase initialization failed:", error);
+      showErrorMessage("Failed to initialize Firebase.");
+    }
+
+    let items = [];
+    let notifications = [];
+    let currentUser = "Guest";
+
+    // Fetch username and update UI
+    auth.onAuthStateChanged(user => {
+      const display = document.getElementById("username-display");
+      const listBtn = document.querySelector(".list-btn");
+      listBtn.disabled = !user; // Enable if user exists, disable if not
+      if (user) {
+        console.log("User signed in:", user.uid);
+        db.collection("users").doc(user.uid).get().then(doc => {
+          if (doc.exists) {
+            const username = doc.data().username;
+            display.textContent = `👤 ${username}`;
+            currentUser = username;
+            console.log("Username set:", username);
+          } else {
+            console.warn("User document not found for UID:", user.uid);
+            display.textContent = "👤 Unknown User";
+            currentUser = "Unknown User";
+          }
+          fetchItems();
+          fetchNotifications();
+        }).catch(error => {
+          console.error("Error fetching user data:", error);
+          display.textContent = "👤 Error";
+          currentUser = "Guest";
+          fetchItems();
+          fetchNotifications();
+        });
+      } else {
+        console.log("No user signed in.");
+        display.textContent = "👤 Guest";
+        currentUser = "Guest";
+        fetchItems();
+        fetchNotifications();
+      }
+    });
+
+    // Detect online/offline status
+    window.addEventListener("online", () => {
+      document.getElementById("offline-message")?.remove();
+      fetchItems();
+    });
+    window.addEventListener("offline", () => {
+      const msg = document.createElement("div");
+      msg.id = "offline-message";
+      msg.className = "error-message show";
+      msg.textContent = "You are offline. Some features may be unavailable.";
+      document.querySelector(".main").prepend(msg);
+    });
+
+    // Fetch items from Firestore
+    function fetchItems(query = "", category = "all") {
+      if (window.itemListener) window.itemListener();
+      
+      const itemGrid = document.getElementById("item-grid");
+      itemGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #ca8a04;">Loading items...</div>';
+      
+      let itemQuery = db.collection("items").orderBy("timestamp", "desc");
+
+      window.itemListener = itemQuery.onSnapshot(snapshot => {
+        items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderItems(query, category);
+      }, error => {
+        console.error("Error fetching items:", error);
+        itemGrid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #6b7280;">Failed to load items.</p>';
+        showErrorMessage("Failed to load items: " + error.message);
+      });
+    }
+
+    function renderItems(query = "", category = "all") {
+      const itemGrid = document.getElementById("item-grid");
+      let filteredItems = items;
+
+      if (query) {
+        filteredItems = filteredItems.filter(
+          item =>
+            item.title.toLowerCase().includes(query.toLowerCase()) ||
+            item.description.toLowerCase().includes(query.toLowerCase())
+        );
+      }
+
+      if (category !== "all") {
+        filteredItems = filteredItems.filter(item => item.category === category);
+      }
+
+      itemGrid.innerHTML =
+        filteredItems.length > 0
+          ? filteredItems
+              .map(
+                item => `
+                <div class="card">
+                  ${item.sold ? '<div class="sold-badge">Sold</div>' : ''}
+                  <img src="${item.image}" alt="${item.title}" onerror="this.src='https://via.placeholder.com/180?text=Image+Not+Found'; this.classList.add('error')" />
+                  <h3>${item.title}</h3>
+                  <p class="price">₹${item.price}</p>
+                  <p class="category">${item.category}</p>
+                  <p class="description">${item.description || 'No description provided.'}</p>
+                  ${item.sellerId === auth.currentUser?.uid ? `
+                    <button class="action-btn tooltip" onclick="openModal('edit', '${item.id}')" aria-label="Edit item">
+                      Edit Item <span class="tooltiptext">Edit this item</span>
+                    </button>
+                    <button class="action-btn tooltip" onclick="markSold('${item.id}')" ${item.sold ? 'disabled' : ''} aria-label="Mark as sold">
+                      Mark Sold <span class="tooltiptext">Mark this item as sold</span>
+                    </button>
+                    <button class="action-btn tooltip" onclick="deleteItem('${item.id}')" aria-label="Delete item">
+                      Delete Item <span class="tooltiptext">Remove this item</span>
+                    </button>
+                  ` : `
+                    <button class="contact-btn tooltip" onclick="toggleContact('${item.id}', '${item.seller}')" aria-label="Show seller contact">
+                      Contact Seller <span class="tooltiptext">View seller details</span>
+                    </button>
+                  `}
+                  <div id="contact-${item.id}" class="contact-section">
+                    <p><strong>Seller:</strong> ${item.seller}</p>
+                    <p><strong>Email:</strong> <a href="mailto:${item.seller.toLowerCase()}@unihive.com">${item.seller.toLowerCase()}@unihive.com</a></p>
+                    <p><em>Click again to hide.</em></p>
+                  </div>
+                </div>
+              `
+              )
+              .join("")
+          : '<p style="grid-column: 1 / -1; text-align: center; color: #6b7280;">No items found.</p>';
+    }
+
+    function openModal(mode, itemId = null) {
+      if (!auth.currentUser) {
+        showErrorMessage("Please sign in to " + (mode === 'edit' ? "edit" : "list") + " an item.");
+        console.log("Cannot open modal: User not signed in.");
+        return;
+      }
+      console.log("Opening modal in", mode, "mode for item:", itemId);
+      const modal = document.getElementById("list-item-modal");
+      const modalTitle = document.getElementById("modal-title");
+      const submitBtn = document.querySelector("#list-item-form .submit-btn");
+      const editItemIdInput = document.getElementById("edit-item-id");
+      const preview = document.getElementById("image-preview");
+
+      if (mode === 'edit') {
+        const item = items.find(i => i.id === itemId);
+        if (!item) {
+          showErrorMessage("Item not found.");
+          return;
+        }
+        modalTitle.textContent = "Edit Item 🐝";
+        submitBtn.textContent = "Save Changes";
+        editItemIdInput.value = itemId;
+        document.getElementById("item-title").value = item.title;
+        document.getElementById("item-price").value = item.price;
+        document.getElementById("item-category").value = item.category;
+        document.getElementById("item-description").value = item.description || "";
+        preview.src = item.image;
+        preview.classList.add("show");
+      } else {
+        modalTitle.textContent = "List New Item 🐝";
+        submitBtn.textContent = "List Item";
+        editItemIdInput.value = "";
+        document.getElementById("list-item-form").reset();
+        preview.src = "";
+        preview.classList.remove("show");
+      }
+
+      modal.classList.add("open");
+    }
+
+    async function submitItem() {
+      const itemId = document.getElementById("edit-item-id").value;
+      const title = document.getElementById("item-title").value.trim();
+      const price = document.getElementById("item-price").value.trim();
+      const category = document.getElementById("item-category").value;
+      const description = document.getElementById("item-description").value.trim();
+      const imageInput = document.getElementById("item-image");
+      const imageFile = imageInput.files[0];
+      const submitBtn = document.querySelector("#list-item-form .submit-btn");
+      const timestamp = new Date().toISOString();
+
+      // Validation
+      if (!title || !price || !category) {
+        showErrorMessage("Please fill in all required fields: Title, Price, and Category.");
+        return;
+      }
+      if (isNaN(price) || parseInt(price) <= 0) {
+        showErrorMessage("Please enter a valid price greater than 0.");
+        return;
+      }
+      const user = auth.currentUser;
+      if (!user) {
+        showErrorMessage("You must be signed in to " + (itemId ? "edit" : "list") + " an item.");
+        return;
+      }
+      if (!navigator.onLine) {
+        showErrorMessage("You are offline. Please connect to the internet to " + (itemId ? "edit" : "list") + " an item.");
+        return;
+      }
+      if (imageFile && imageFile.size > 5 * 1024 * 1024) {
+        showErrorMessage("Image size must be less than 5MB.");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = itemId ? "Saving..." : "Listing...";
+
+      try {
+        let imageUrl;
+        if (imageFile) {
+          const ref = storage.ref(`items/${user.uid}/${Date.now()}_${imageFile.name}`);
+          await ref.put(imageFile);
+          imageUrl = await ref.getDownloadURL();
+        } else {
+          imageUrl = itemId ? items.find(i => i.id === itemId).image : "https://via.placeholder.com/180?text=Item";
+        }
+
+        const itemData = {
+          title,
+          price: parseInt(price),
+          category,
+          description: description || "No description provided.",
+          image: imageUrl,
+          seller: currentUser,
+          sellerId: user.uid,
+          timestamp,
+          sold: itemId ? items.find(i => i.id === itemId).sold : false
+        };
+
+        if (itemId) {
+          await db.collection("items").doc(itemId).update(itemData);
+          showSuccessMessage("Item updated successfully! 🐝");
+        } else {
+          await db.collection("items").add(itemData);
+          showSuccessMessage("Item listed successfully! 🐝");
+          notifyUsers(`New item listed: ${title}`);
+        }
+        closeModal();
+        fetchItems();
+      } catch (error) {
+        console.error("Error " + (itemId ? "updating" : "listing") + " item:", error);
+        showErrorMessage("Failed to " + (itemId ? "update" : "list") + " item: " + error.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = itemId ? "Save Changes" : "List Item";
+      }
+    }
+
+    async function markSold(itemId) {
+      if (!auth.currentUser) {
+        showErrorMessage("Please sign in to mark an item as sold.");
+        return;
+      }
+      try {
+        await db.collection("items").doc(itemId).update({ sold: true });
+        showSuccessMessage("Item marked as sold!");
+        fetchItems();
+      } catch (error) {
+        console.error("Error marking item as sold:", error);
+        showErrorMessage("Failed to mark item as sold: " + error.message);
+      }
+    }
+
+    async function deleteItem(itemId) {
+      if (!auth.currentUser) {
+        showErrorMessage("Please sign in to delete an item.");
+        return;
+      }
+      if (!confirm("Are you sure you want to delete this item?")) return;
+      try {
+        await db.collection("items").doc(itemId).delete();
+        showSuccessMessage("Item deleted successfully!");
+        fetchItems();
+      } catch (error) {
+        console.error("Error deleting item:", error);
+        showErrorMessage("Failed to delete item: " + error.message);
+      }
+    }
+
+    function closeModal() {
+      console.log("Closing modal.");
+      const modal = document.getElementById("list-item-modal");
+      modal.classList.remove("open");
+      document.getElementById("list-item-form").reset();
+      const preview = document.getElementById("image-preview");
+      preview.src = "";
+      preview.classList.remove("show");
+      const submitBtn = document.querySelector("#list-item-form .submit-btn");
+      submitBtn.disabled = false;
+      submitBtn.textContent = "List Item";
+    }
+
+    function toggleContact(itemId, seller) {
+      const contactSection = document.getElementById(`contact-${itemId}`);
+      if (!contactSection) {
+        console.error(`Contact section for item ${itemId} not found.`);
+        return;
+      }
+      const isOpen = contactSection.classList.contains("open");
+      contactSection.classList.toggle("open", !isOpen);
+      if (!isOpen && seller !== currentUser) {
+        notifyUsers(`Contact info viewed for item ID ${itemId} by ${currentUser}`);
+      }
+    }
+
+    function toggleSidebar() {
+      console.log("Toggling sidebar.");
+      const sidebar = document.getElementById("mySidenav");
+      const mainContent = document.querySelector(".main");
+      sidebar.classList.toggle("open");
+      mainContent.classList.toggle("open");
+    }
+
+    function toggleDarkMode() {
+  document.body.classList.toggle("dark-mode");
+  const button = document.querySelector(".navbar .user-info button");
+  button.textContent = document.body.classList.contains("dark-mode")?"☀️":"🌙";
+}
+
+    async function notifyUsers(message) {
+      if (!auth.currentUser) return;
+      try {
+        console.log("Adding notification:", message);
+        await db.collection("notifications").add({
+          message,
+          userId: auth.currentUser.uid,
+          read: false,
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error("Error adding notification:", error);
+      }
+    }
+
+    function fetchNotifications() {
+      if (!auth.currentUser) return;
+      console.log("Fetching notifications for user:", auth.currentUser.uid);
+      db.collection("notifications")
+        .where("userId", "==", auth.currentUser.uid)
+        .orderBy("timestamp", "desc")
+        .onSnapshot(snapshot => {
+          notifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          updateNotificationCount();
+          if (document.getElementById("notification-dropdown").style.display === "block") {
+            renderNotifications();
+          }
+        }, error => {
+          console.error("Error fetching notifications:", error);
+        });
+    }
+
+    function updateNotificationCount() {
+      const unread = notifications.filter(n => !n.read).length;
+      document.getElementById("notification-count").textContent = unread || 0;
+    }
+
+    function renderNotifications() {
+      const list = document.getElementById("notification-list");
+      list.innerHTML = "";
+      notifications.forEach((notif, index) => {
+        const li = document.createElement("li");
+        li.textContent = notif.message;
+        if (!notif.read) {
+          li.className = "unread";
+          li.onclick = async () => {
+            try {
+              await db.collection("notifications").doc(notif.id).update({ read: true });
+            } catch (error) {
+              console.error("Error marking notification as read:", error);
+            }
+          };
+        }
+        list.appendChild(li);
+      });
+    }
+
+    function toggleNotifications() {
+      console.log("Toggling notifications dropdown.");
+      const dropdown = document.getElementById("notification-dropdown");
+      dropdown.style.display = dropdown.style.display === "none" ? "block" : "none";
+      if (dropdown.style.display === "block") { renderNotifications(); }
+    }
+
+    function showSuccessMessage(message) {
+      console.log("Showing success message:", message);
+      const successMsg = document.getElementById("success-message");
+      successMsg.textContent = message;
+      successMsg.classList.add("show");
+      setTimeout(() => successMsg.classList.remove("show"), 3000);
+    }
+
+    function showErrorMessage(message) {
+      console.log("Showing error message:", message);
+      const errorMsg = document.getElementById("error-message");
+      errorMsg.textContent = message;
+      errorMsg.classList.add("show");
+      setTimeout(() => errorMsg.classList.remove("show"), 5000);
+    }
+
+    // Image preview handler and event listeners
+    document.addEventListener("DOMContentLoaded", () => {
+      const imageInput = document.getElementById("item-image");
+      const preview = document.getElementById("image-preview");
+      
+      imageInput.addEventListener("change", () => {
+        const file = imageInput.files[0];
+        if (file) {
+          if (file.size > 5 * 1024 * 1024) {
+            showErrorMessage("Image size must be less than 5MB.");
+            imageInput.value = "";
+            preview.src = "";
+            preview.classList.remove("show");
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = e => {
+            preview.src = e.target.result;
+            preview.classList.add("show");
+          };
+          reader.onerror = () => {
+            preview.src = "";
+            preview.classList.remove("show");
+            showErrorMessage("Failed to preview image.");
+          };
+          reader.readAsDataURL(file);
+        } else {
+          preview.src = "";
+          preview.classList.remove("show");
+        }
+      });
+
+      if (localStorage.getItem("darkMode") === "true") {
+        document.body.classList.add("dark-mode");
+      }
+
+      document.getElementById("search-input").addEventListener("input", e => {
+        const category = document.getElementById("category-filter").value;
+        fetchItems(e.target.value, category);
+      });
+
+      document.getElementById("category-filter").addEventListener("change", e => {
+        const query = document.getElementById("search-input").value;
+        fetchItems(query, e.target.value);
+      });
+    });
+  </script>
+</body>
+</html>

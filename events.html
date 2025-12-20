@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UniHive - Events</title>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #fefce8;
+      color: #333;
+      display: flex;
+      height: 100vh;
+      transition: background-color 0.3s ease;
+    }
+
+    body.dark-mode {
+      background-color: #121212;
+      color: #ffffff;
+    }
+
+    .dark-mode .navbar { background-color: #333; }
+    .dark-mode .sidebar { background-color: #1e1e1e; }
+    .dark-mode .sidebar a { color: #fff; }
+    .dark-mode .sidebar a:hover { background-color: #3a3a3a; }
+    .dark-mode .main { background-color: #1e1e1e; }
+    .dark-mode .card { background-color: #2a2a2a; color: #e5e7eb; }
+    .dark-mode .search-bar input,
+    .dark-mode .category-filter select {
+      background-color: #3a3a3a;
+      color: #fff;
+      border-color: #555;
+    }
+    .dark-mode .modal-content { background-color: #1e1e1e; }
+    .dark-mode .modal-content label,
+    .dark-mode .modal-content input,
+    .dark-mode .modal-content select,
+    .dark-mode .modal-content textarea {
+      color: #e5e7eb;
+      border-color: #555;
+    }
+    .dark-mode .contact-section { background-color: #2a2a2a; }
+    .dark-mode .success-message, .dark-mode .error-message { background-color: #14532d; color: #fff; }
+    .dark-mode .toggle-btn { background-color: #3a3a3a; }
+    .dark-mode .toggle-btn:hover { background-color: #4a4a4a; }
+    .dark-mode .joined-badge { background-color: #14532d; }
+    .dark-mode .action-btn { background-color: #3a3a3a; }
+    .dark-mode .action-btn:hover { background-color: #4a4a4a; }
+
+    .navbar {
+      background-color: #ca8a04;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: fixed;
+      width: 100%;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .navbar h1 { font-size: 1.8rem; margin: 0; }
+    .navbar .logo { font-weight: bold; letter-spacing: 1px; }
+    .navbar .user-info { display: flex; align-items: center; gap: 1rem; }
+
+    .notification-icon {
+      font-size: 1.6rem;
+      color: #facc15;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.2s;
+    }
+    .notification-icon:hover { transform: scale(1.1); }
+    .notification-icon span {
+      background: #ef4444;
+      color: white;
+      border-radius: 50%;
+      padding: 0.2rem 0.5rem;
+      font-size: 0.8rem;
+      position: absolute;
+      top: -8px;
+      right: -8px;
+    }
+
+    .notification-dropdown {
+      display: none;
+      position: absolute;
+      right: 2rem;
+      top: 4.5rem;
+      background: white;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      max-height: 200px;
+      overflow-y: auto;
+      animation: fadeIn 0.2s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .notification-dropdown h3 {
+      margin: 0 0 0.5rem;
+      color: #ca8a04;
+      font-size: 1.1rem;
+    }
+    .notification-dropdown ul { list-style: none; padding: 0; margin: 0; }
+    .notification-dropdown li {
+      padding: 0.5rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .notification-dropdown li:hover { background-color: #f3f4f6; }
+    .notification-dropdown li.unread { font-weight: bold; color: #ca8a04; }
+
+    .sidebar {
+      background-color: #facc15;
+      width: 250px;
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      height: 100vh;
+      position: fixed;
+      top: 4rem;
+      left: -250px;
+      transition: left 0.3s ease;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+      z-index: 99;
+    }
+
+    .sidebar.open { left: 0; }
+    .sidebar h2 {
+      font-size: 1.6rem;
+      color: #78350f;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .sidebar a {
+      text-decoration: none;
+      color: #78350f;
+      font-weight: 600;
+      padding: 0.7rem 1rem;
+      border-radius: 8px;
+      transition: background 0.3s, color 0.3s;
+    }
+    .sidebar a:hover,
+    .sidebar a.active { background-color: #fde68a; color: #78350f; }
+    .sidebar .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 30px;
+      color: #78350f;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .sidebar .close-btn:hover { transform: rotate(90deg); }
+
+    .main {
+      margin-left: 0;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      overflow-y: auto;
+      overflow-x: visible;
+      transition: margin-left 0.3s ease;
+      margin-top: 4rem;
+      position: relative;
+      z-index: 1;
+    }
+    .main.open { margin-left: 250px; }
+    .main h1 {
+      font-size: 2.2rem;
+      margin-bottom: 1.5rem;
+      color: #ca8a04;
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    .toggle-btn {
+      position: fixed;
+      top: 1.2rem;
+      left: 1rem;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      background-color: #facc15;
+      border: none;
+      border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+      z-index: 101;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 0;
+    }
+    .toggle-btn .hamburger-line {
+      width: 24px;
+      height: 3px;
+      background-color: #fff;
+      margin: 3px 0;
+      transition: background-color 0.3s;
+    }
+    .toggle-btn:hover {
+      background-color: #f59e0b;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    .toggle-btn:focus {
+      outline: 2px solid #ca8a04;
+      outline-offset: 2px;
+    }
+    .dark-mode .toggle-btn { background-color: #3a3a3a; }
+    .dark-mode .toggle-btn:hover { background-color: #4a4a4a; }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .create-btn {
+      padding: 0.8rem 1.8rem;
+      background-color: #facc15;
+      color: #78350f;
+      border: 2px solid #ca8a04;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+    .create-btn:hover {
+      background-color: #f59e0b;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+    }
+    .create-btn:disabled {
+      background-color: #d1d5db;
+      color: #6b7280;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .dark-mode .create-btn { background-color: #facc15; }
+    .dark-mode .create-btn:hover { background-color: #f59e0b; }
+
+    .search-filter {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .search-bar input,
+    .category-filter select {
+      padding: 0.7rem;
+      font-size: 1rem;
+      border: 2px solid #d1d5db;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 200px;
+      transition: border-color 0.3s, box-shadow 0.3s, background-color 0.3s;
+      background-color: #fff;
+    }
+    .search-bar input:focus,
+    .category-filter select:focus {
+      border-color: #ca8a04;
+      box-shadow: 0 0 10px rgba(202, 138, 4, 0.3);
+      outline: none;
+    }
+    .category-filter select {
+      appearance: none;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2378350f' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E") no-repeat right 0.7rem center/1rem;
+      cursor: pointer;
+    }
+    .category-filter select:hover { background-color: #f9fafb; }
+    .dark-mode .category-filter select:hover { background-color: #4a4a4a; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+      justify-content: center;
+    }
+
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      width: 250px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+      position: relative;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+    }
+    .card img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      transition: opacity 0.3s;
+    }
+    .card img:hover { opacity: 0.9; }
+    .card img.error {
+      background: #d1d5db;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #6b7280;
+      font-size: 0.9rem;
+    }
+    .card h3 {
+      font-size: 1.3rem;
+      margin-bottom: 0.7rem;
+      color: #4b5563;
+    }
+    .card .date {
+      font-weight: bold;
+      color: #ca8a04;
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+    .card p.category {
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+    .card p.description {
+      font-style: italic;
+      margin-bottom: 1rem;
+    }
+    .card .contact-btn,
+    .card .action-btn {
+      display: block;
+      padding: 0.6rem 1.2rem;
+      background-color: #facc15;
+      color: #78350f;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: background 0.3s, transform 0.2s;
+      cursor: pointer;
+      text-align: center;
+      margin-top: 0.5rem;
+      width: 100%;
+      border: none;
+    }
+    .card .contact-btn:hover,
+    .card .action-btn:hover {
+      background-color: #fde68a;
+      transform: translateY(-2px);
+    }
+    .card .joined-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: #22c55e;
+      color: white;
+      padding: 0.3rem 0.7rem;
+      border-radius: 5px;
+      font-size: 0.9rem;
+    }
+    .contact-section {
+      display: none;
+      background: #f9fafb;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-top: 1rem;
+      font-size: 0.95rem;
+      animation: slideDown 0.3s ease-out;
+    }
+    .contact-section.open { display: block; }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .contact-section p { margin: 0.3rem 0; color: #4b5563; }
+
+    .success-message, .error-message {
+      display: none;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      font-weight: 600;
+      animation: fadeIn 0.5s ease-in;
+    }
+    .success-message.show, .error-message.show { display: block; }
+    .success-message { background-color: #22c55e; color: white; }
+    .error-message { background-color: #ef4444; color: white; }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 200;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .modal.open {
+      display: flex;
+      opacity: 1;
+    }
+    .modal-content {
+      background-color: #fefce8;
+      padding: 2rem;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 500px;
+      position: relative;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      animation: slideUp 0.3s ease-out;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-content .close-icon {
+      position: absolute;
+      top: 1rem;
+      right: 1.5rem;
+      font-size: 1.8rem;
+      color: #78350f;
+      cursor: pointer;
+      transition: color 0.2s, transform 0.2s;
+    }
+    .modal-content .close-icon:hover {
+      color: #ca8a04;
+      transform: rotate(90deg);
+    }
+    .modal-content h2 {
+      font-size: 1.8rem;
+      color: #ca8a04;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    .modal-content form { display: grid; gap: 1.2rem; }
+    .modal-content label {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #4b5563;
+    }
+    .modal-content input,
+    .modal-content select,
+    .modal-content textarea {
+      width: 100%;
+      padding: 0.8rem;
+      border: 2px solid #d1d5db;
+      border-radius: 10px;
+      font-size: 1rem;
+      background-color: #fff;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .modal-content input:focus,
+    .modal-content select:focus,
+    .modal-content textarea:focus {
+      border-color: #ca8a04;
+      box-shadow: 0 0 10px rgba(202, 138, 4, 0.3);
+      outline: none;
+    }
+    .modal-content textarea { resize: vertical; min-height: 100px; }
+    .modal-content .btn-group {
+      display: flex;
+      gap: 1.2rem;
+      justify-content: flex-end;
+      margin-top: 1.5rem;
+    }
+    .modal-content button {
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+    }
+    .modal-content .submit-btn { background-color: #facc15; color: #78350f; }
+    .modal-content .submit-btn:hover {
+      background-color: #f59e0b;
+      transform: translateY(-2px);
+    }
+    .modal-content .submit-btn:disabled {
+      background-color: #d1d5db;
+      color: #6b7280;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .modal-content .cancel-btn { background-color: #e5e7eb; color: #4b5563; }
+    .modal-content .cancel-btn:hover {
+      background-color: #d1d5db;
+      transform: translateY(-2px);
+    }
+    .image-preview {
+      margin-top: 0.5rem;
+      max-width: 100%;
+      max-height: 150px;
+      border-radius: 8px;
+      display: none;
+    }
+    .image-preview.show { display: block; }
+
+    .tooltip { position: relative; display: inline-block; }
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 120px;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 0.3rem 0.5rem;
+      position: absolute;
+      z-index: 300;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -60px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
+
+    @media (max-width: 768px) {
+      .navbar { padding: 1rem; }
+      .navbar h1 { font-size: 1.5rem; }
+      .sidebar { width: 100%; left: -100%; }
+      .main { padding: 1.5rem; }
+      .main.open { margin-left: 0; }
+      .main h1 { font-size: 1.8rem; }
+      .toggle-btn { width: 36px; height: 36px; top: 1rem; left: 0.8rem; }
+      .toggle-btn .hamburger-line { width: 20px; height: 2px; margin: 2px 0; }
+      .create-btn { padding: 0.6rem 1.2rem; font-size: 1rem; }
+      .search-filter { flex-direction: column; }
+      .search-bar input,
+      .category-filter select { max-width: 100%; }
+      .modal-content { margin: 1rem; padding: 1.5rem; max-width: 90%; }
+      .modal-content h2 { font-size: 1.5rem; }
+      .card .contact-btn, .card .action-btn { padding: 0.6rem; font-size: 0.95rem; }
+      .image-preview { max-height: 100px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <h1 class="logo">UniHive 🐝</h1>
+    <div class="user-info">
+      <div class="tooltip notification-icon" onclick="toggleNotifications()">
+        🔔 <span id="notification-count">0</span>
+        <span class="tooltiptext">View Notifications</span>
+      </div>
+      <span id="username-display" aria-live="polite">👤 Loading...</span>
+      <button onclick="toggleDarkMode()" class="tooltip" aria-label="Toggle Dark Mode">
+        🌙 <span class="tooltiptext">Toggle Dark Mode</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="notification-dropdown" class="notification-dropdown">
+    <h3>Notifications</h3>
+    <ul id="notification-list"></ul>
+  </div>
+
+  <div id="mySidenav" class="sidebar">
+    <span class="close-btn" onclick="toggleSidebar()">×</span>
+    <h2>🐝 UniHive</h2>
+    <a href="dashboard.html">Home</a>
+    <a href="buy.html">Buy & Sell</a>
+    <a href="discuss.html">Discussion Forum</a>
+    <a href="events.html" class="active">Events</a>
+    <a href="clubs.html">Clubs</a>
+    <a href="elibrary.html">Library</a>
+    <a href="#" onclick="firebase.auth().signOut()">Logout</a>
+  </div>
+
+  <div class="main">
+    <div class="success-message" id="success-message"></div>
+    <div class="error-message" id="error-message"></div>
+    <button class="toggle-btn tooltip" onclick="toggleSidebar()" aria-label="Toggle Menu">
+      <div class="hamburger-line"></div>
+      <div class="hamburger-line"></div>
+      <div class="hamburger-line"></div>
+      <span class="tooltiptext">Open Menu</span>
+    </button>
+    <div class="header">
+      <h1>Events</h1>
+      <button class="create-btn tooltip" onclick="openModal('new')" aria-label="Create New Event" disabled>
+        Create Event <span class="tooltiptext">Add a new event</span>
+      </button>
+    </div>
+
+    <div class="search-filter">
+      <div class="search-bar">
+        <input type="text" id="search-input" placeholder="Search events..." aria-label="Search events" />
+      </div>
+      <div class="category-filter">
+        <select id="category-filter" aria-label="Filter by category">
+          <option value="all">All Categories</option>
+          <option value="Workshop">Workshop</option>
+          <option value="Seminar">Seminar</option>
+          <option value="Social">Social</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid" id="event-grid"></div>
+
+    <div class="modal" id="create-event-modal" role="dialog" aria-labelledby="modal-title">
+      <div class="modal-content">
+        <span class="close-icon" onclick="closeModal()" aria-label="Close Modal">×</span>
+        <h2 id="modal-title">Create New Event 🐝</h2>
+        <form id="create-event-form">
+          <input type="hidden" id="edit-event-id">
+          <div>
+            <label for="event-title">Title</label>
+            <input type="text" id="event-title" placeholder="e.g., TechFest 2025" required aria-required="true" />
+          </div>
+          <div>
+            <label for="event-date">Date</label>
+            <input type="datetime-local" id="event-date" required aria-required="true" />
+          </div>
+          <div>
+            <label for="event-location">Location</label>
+            <input type="text" id="event-location" placeholder="e.g., Campus Auditorium" required aria-required="true" />
+          </div>
+          <div>
+            <label for="event-category">Category</label>
+            <select id="event-category" required aria-required="true">
+              <option value="" disabled selected>Select a category</option>
+              <option value="Workshop">Workshop</option>
+              <option value="Seminar">Seminar</option>
+              <option value="Social">Social</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label for="event-description">Description</label>
+            <textarea id="event-description" placeholder="Describe the event..."></textarea>
+          </div>
+          <div>
+            <label for="event-image">Upload Image</label>
+            <input type="file" id="event-image" accept="image/*" aria-label="Upload event image" />
+            <img id="image-preview" class="image-preview" alt="Image preview" />
+          </div>
+          <div class="btn-group">
+            <button type="button" class="cancel-btn" onclick="closeModal()">Cancel</button>
+            <button type="button" class="submit-btn" onclick="submitEvent()">Submit</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyBnPy5bVzYj53TpBfeXIM--aLue4qgLJtU",
+      authDomain: "unihive-a8959.firebaseapp.com",
+      projectId: "unihive-a8959",
+      storageBucket: "unihive-a8959.appspot.com",
+      messagingSenderId: "19484479047",
+      appId: "1:19484479047:web:b8b61a81d65fe479d5ab62",
+      measurementId: "G-3SNN0K0BV2"
+    };
+
+    let auth, db, storage;
+    try {
+      firebase.initializeApp(firebaseConfig);
+      auth = firebase.auth();
+      db = firebase.firestore();
+      storage = firebase.storage();
+      db.enablePersistence().catch(error => {
+        console.warn("Firestore offline persistence failed:", error);
+      });
+    } catch (error) {
+      console.error("Firebase initialization failed:", error);
+      showErrorMessage("Failed to initialize Firebase.");
+    }
+
+    let events = [];
+    let notifications = [];
+    let currentUser = "Guest";
+
+    // Example event data (for initial display if Firestore is empty)
+    const exampleEvents = [
+      {
+        id: "example1",
+        title: "TechFest 2025",
+        date: "2025-05-10T10:00",
+        location: "Campus Auditorium",
+        category: "Workshop",
+        description: "Join us for a day of tech workshops and networking!",
+        image: "https://via.placeholder.com/180?text=TechFest",
+        organizer: "Guest",
+        organizerId: "exampleUser",
+        timestamp: new Date().toISOString(),
+        joined: false
+      },
+      {
+        id: "example2",
+        title: "AI Seminar",
+        date: "2025-05-15T14:00",
+        location: "Lecture Hall B",
+        category: "Seminar",
+        description: "Explore the future of AI with industry experts.",
+        image: "https://via.placeholder.com/180?text=AI+Seminar",
+        organizer: "Guest",
+        organizerId: "exampleUser",
+        timestamp: new Date().toISOString(),
+        joined: false
+      }
+    ];
+
+    // Fetch username and update UI
+    auth.onAuthStateChanged(user => {
+      const display = document.getElementById("username-display");
+      const createBtn = document.querySelector(".create-btn");
+      createBtn.disabled = !user;
+      if (user) {
+        console.log("User signed in:", user.uid);
+        db.collection("users").doc(user.uid).get().then(doc => {
+          if (doc.exists) {
+            const username = doc.data().username;
+            display.textContent = '👤 ${username}';
+            currentUser = username;
+            console.log("Username set:", username);
+          } else {
+            console.warn("User document not found for UID:", user.uid);
+            display.textContent = "👤 Unknown User";
+            currentUser = "Unknown User";
+          }
+          fetchEvents();
+          fetchNotifications();
+        }).catch(error => {
+          console.error("Error fetching user data:", error);
+          display.textContent = "👤 Error";
+          currentUser = "Guest";
+          fetchEvents();
+          fetchNotifications();
+        });
+      } else {
+        console.log("No user signed in.");
+        display.textContent = "👤 Guest";
+        currentUser = "Guest";
+        events = exampleEvents;
+        renderEvents();
+        fetchNotifications();
+      }
+    });
+
+    // Detect online/offline status
+    window.addEventListener("online", () => {
+      document.getElementById("offline-message")?.remove();
+      fetchEvents();
+    });
+    window.addEventListener("offline", () => {
+      const msg = document.createElement("div");
+      msg.id = "offline-message";
+      msg.className = "error-message show";
+      msg.textContent = "You are offline. Some features may be unavailable.";
+      document.querySelector(".main").prepend(msg);
+    });
+
+    // Fetch events from Firestore
+    function fetchEvents(query = "", category = "all") {
+      if (window.eventListener) window.eventListener();
+      
+      const eventGrid = document.getElementById("event-grid");
+      eventGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #ca8a04;">Loading events...</div>';
+      
+      let eventQuery = db.collection("events").orderBy("timestamp", "desc");
+
+      window.eventListener = eventQuery.onSnapshot(snapshot => {
+        events = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderEvents(query, category);
+      }, error => {
+        console.error("Error fetching events:", error);
+        eventGrid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #6b7280;">Failed to load events.</p>';
+        showErrorMessage("Failed to load events: " + error.message);
+      });
+    }
+
+    function renderEvents(query = "", category = "all") {
+      const eventGrid = document.getElementById("event-grid");
+      let filteredEvents = events;
+
+      if (query) {
+        filteredEvents = filteredEvents.filter(
+          event =>
+            event.title.toLowerCase().includes(query.toLowerCase()) ||
+            event.description.toLowerCase().includes(query.toLowerCase())
+        );
+      }
+
+      if (category !== "all") {
+        filteredEvents = filteredEvents.filter(event => event.category === category);
+      }
+
+      eventGrid.innerHTML =
+        filteredEvents.length > 0
+          ? filteredEvents
+              .map(
+                event => `
+                <div class="card">
+                  ${event.joined ? '<div class="joined-badge">Joined</div>' : ''}
+                  <img src="${event.image}" alt="${event.title}" onerror="this.src='https://via.placeholder.com/180?text=Image+Not+Found'; this.classList.add('error')" />
+                  <h3>${event.title}</h3>
+                  <p class="date">${new Date(event.date).toLocaleString()}</p>
+                  <p class="category">${event.category}</p>
+                  <p class="description">${event.description || 'No description provided.'}</p>
+                  ${event.organizerId === auth.currentUser?.uid ? `
+                    <button class="action-btn tooltip" onclick="openModal('edit', '${event.id}')" aria-label="Edit event">
+                      Edit Event <span class="tooltiptext">Edit this event</span>
+                    </button>
+                    <button class="action-btn tooltip" onclick="deleteEvent('${event.id}')" aria-label="Delete event">
+                      Delete Event <span class="tooltiptext">Remove this event</span>
+                    </button>
+                  ` : `
+                    <button class="contact-btn tooltip" onclick="toggleContact('${event.id}', '${event.organizer}')" aria-label="Show organizer contact">
+                      Contact Organizer <span class="tooltiptext">View organizer details</span>
+                    </button>
+                    <button class="action-btn tooltip" onclick="joinEvent('${event.id}')" ${event.joined ? 'disabled' : ''} aria-label="Join event">
+                      Join Event <span class="tooltiptext">Join this event</span>
+                    </button>
+                  `}
+                  <div id="contact-${event.id}" class="contact-section">
+                    <p><strong>Organizer:</strong> ${event.organizer}</p>
+                    <p><strong>Email:</strong> <a href="mailto:${event.organizer.toLowerCase()}@unihive.com">${event.organizer.toLowerCase()}@unihive.com</a></p>
+                    <p><em>Click again to hide.</em></p>
+                  </div>
+                </div>
+              `
+              )
+              .join("")
+          : '<p style="grid-column: 1 / -1; text-align: center; color: #6b7280;">No events found.</p>';
+    }
+
+    function openModal(mode, eventId = null) {
+      if (!auth.currentUser) {
+        showErrorMessage("Please sign in to " + (mode === 'edit' ? "edit" : "create") + " an event.");
+        console.log("Cannot open modal: User not signed in.");
+        return;
+      }
+      console.log("Opening modal in", mode, "mode for event:", eventId);
+      const modal = document.getElementById("create-event-modal");
+      const modalTitle = document.getElementById("modal-title");
+      const submitBtn = document.querySelector("#create-event-form .submit-btn");
+      const editEventIdInput = document.getElementById("edit-event-id");
+      const preview = document.getElementById("image-preview");
+
+      if (mode === 'edit') {
+        const event = events.find(e => e.id === eventId);
+        if (!event) {
+          showErrorMessage("Event not found.");
+          return;
+        }
+        modalTitle.textContent = "Edit Event 🐝";
+        submitBtn.textContent = "Save Changes";
+        editEventIdInput.value = eventId;
+        document.getElementById("event-title").value = event.title;
+        document.getElementById("event-date").value = event.date.slice(0, 16);
+        document.getElementById("event-location").value = event.location;
+        document.getElementById("event-category").value = event.category;
+        document.getElementById("event-description").value = event.description || "";
+        preview.src = event.image;
+        preview.classList.add("show");
+      } else {
+        modalTitle.textContent = "Create New Event 🐝";
+        submitBtn.textContent = "Create Event";
+        editEventIdInput.value = "";
+        document.getElementById("create-event-form").reset();
+        preview.src = "";
+        preview.classList.remove("show");
+      }
+
+      modal.classList.add("open");
+    }
+
+    async function submitEvent() {
+      const eventId = document.getElementById("edit-event-id").value;
+      const title = document.getElementById("event-title").value.trim();
+      const date = document.getElementById("event-date").value;
+      const location = document.getElementById("event-location").value.trim();
+      const category = document.getElementById("event-category").value;
+      const description = document.getElementById("event-description").value.trim();
+      const imageInput = document.getElementById("event-image");
+      const imageFile = imageInput.files[0];
+      const submitBtn = document.querySelector("#create-event-form .submit-btn");
+      const timestamp = new Date().toISOString();
+
+      // Validation
+      if (!title || !date || !location || !category) {
+        showErrorMessage("Please fill in all required fields: Title, Date, Location, and Category.");
+        return;
+      }
+      const eventDate = new Date(date);
+      if (isNaN(eventDate.getTime())) {
+        showErrorMessage("Please enter a valid date.");
+        return;
+      }
+      const user = auth.currentUser;
+      if (!user) {
+        showErrorMessage("You must be signed in to " + (eventId ? "edit" : "create") + " an event.");
+        return;
+      }
+      if (!navigator.onLine) {
+        showErrorMessage("You are offline. Please connect to the internet to " + (eventId ? "edit" : "create") + " an event.");
+        return;
+      }
+      if (imageFile && imageFile.size > 5 * 1024 * 1024) {
+        showErrorMessage("Image size must be less than 5MB.");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = eventId ? "Saving..." : "Creating...";
+
+      try {
+        let imageUrl;
+        if (imageFile) {
+          const ref = storage.ref('events/${user.uid}/${Date.now()}_${imageFile.name}');
+          await ref.put(imageFile);
+          imageUrl = await ref.getDownloadURL();
+        } else {
+          imageUrl = eventId ? events.find(e => e.id === eventId).image : "https://via.placeholder.com/180?text=Event";
+        }
+
+        const eventData = {
+          title,
+          date,
+          location,
+          category,
+          description: description || "No description provided.",
+          image: imageUrl,
+          organizer: currentUser,
+          organizerId: user.uid,
+          timestamp,
+          joined: eventId ? events.find(e => e.id === eventId).joined : false
+        };
+
+        if (eventId) {
+          await db.collection("events").doc(eventId).update(eventData);
+          showSuccessMessage("Event updated successfully! 🐝");
+        } else {
+          await db.collection("events").add(eventData);
+          showSuccessMessage("Event created successfully! 🐝");
+          notifyUsers('New event created: ${title}');
+        }
+        closeModal();
+        fetchEvents();
+      } catch (error) {
+        console.error("Error " + (eventId ? "updating" : "creating") + " event:", error);
+        showErrorMessage("Failed to " + (eventId ? "update" : "create") + " event: " + error.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = eventId ? "Save Changes" : "Create Event";
+      }
+    }
+
+    async function joinEvent(eventId) {
+      if (!auth.currentUser) {
+        showErrorMessage("Please sign in to join an event.");
+        return;
+      }
+      try {
+        await db.collection("events").doc(eventId).update({ joined: true });
+        showSuccessMessage("You have joined the event!");
+        notifyUsers('User ${currentUser} joined event ID ${eventId}');
+        fetchEvents();
+      } catch (error) {
+        console.error("Error joining event:", error);
+        showErrorMessage("Failed to join event: " + error.message);
+      }
+    }
+
+    async function deleteEvent(eventId) {
+      if (!auth.currentUser) {
+        showErrorMessage("Please sign in to delete an event.");
+        return;
+      }
+      if (!confirm("Are you sure you want to delete this event?")) return;
+      try {
+        await db.collection("events").doc(eventId).delete();
+        showSuccessMessage("Event deleted successfully!");
+        fetchEvents();
+      } catch (error) {
+        console.error("Error deleting event:", error);
+        showErrorMessage("Failed to delete event: " + error.message);
+      }
+    }
+
+    function closeModal() {
+      console.log("Closing modal.");
+      const modal = document.getElementById("create-event-modal");
+      modal.classList.remove("open");
+      document.getElementById("create-event-form").reset();
+      const preview = document.getElementById("image-preview");
+      preview.src = "";
+      preview.classList.remove("show");
+      const submitBtn = document.querySelector("#create-event-form .submit-btn");
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Create Event";
+    }
+
+    function toggleContact(eventId, organizer) {
+      const contactSection = document.getElementById('contact-${eventId}');
+      if (!contactSection) {
+        console.error('Contact section for event ${eventId} not found.');
+        return;
+      }
+      const isOpen = contactSection.classList.contains("open");
+      contactSection.classList.toggle("open", !isOpen);
+      if (!isOpen && organizer !== currentUser) {
+        notifyUsers('Contact info viewed for event ID ${eventId} by ${currentUser}');
+      }
+    }
+
+    function toggleSidebar() {
+      console.log("Toggling sidebar.");
+      const sidebar = document.getElementById("mySidenav");
+      const mainContent = document.querySelector(".main");
+      sidebar.classList.toggle("open");
+      mainContent.classList.toggle("open");
+    }
+
+    function toggleDarkMode() {
+  document.body.classList.toggle("dark-mode");
+  const button = document.querySelector(".navbar .user-info button");
+  button.textContent = document.body.classList.contains("dark-mode")?"☀":"🌙";
+}
+
+    async function notifyUsers(message) {
+      if (!auth.currentUser) return;
+      try {
+        console.log("Adding notification:", message);
+        await db.collection("notifications").add({
+          message,
+          userId: auth.currentUser.uid,
+          read: false,
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error("Error adding notification:", error);
+      }
+    }
+
+    function fetchNotifications() {
+      if (!auth.currentUser) return;
+      console.log("Fetching notifications for user:", auth.currentUser.uid);
+      db.collection("notifications")
+        .where("userId", "==", auth.currentUser.uid)
+        .orderBy("timestamp", "desc")
+        .onSnapshot(snapshot => {
+          notifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          updateNotificationCount();
+          if (document.getElementById("notification-dropdown").style.display === "block") {
+            renderNotifications();
+          }
+        }, error => {
+          console.error("Error fetching notifications:", error);
+        });
+    }
+
+    function updateNotificationCount() {
+      const unread = notifications.filter(n => !n.read).length;
+      document.getElementById("notification-count").textContent = unread || 0;
+    }
+
+    function renderNotifications() {
+      const list = document.getElementById("notification-list");
+      list.innerHTML = "";
+      notifications.forEach((notif, index) => {
+        const li = document.createElement("li");
+        li.textContent = notif.message;
+        if (!notif.read) {
+          li.className = "unread";
+          li.onclick = async () => {
+            try {
+              await db.collection("notifications").doc(notif.id).update({ read: true });
+            } catch (error) {
+              console.error("Error marking notification as read:", error);
+            }
+          };
+        }
+        list.appendChild(li);
+      });
+    }
+
+    function toggleNotifications() {
+      console.log("Toggling notifications dropdown.");
+      const dropdown = document.getElementById("notification-dropdown");
+      dropdown.style.display = dropdown.style.display === "none" ? "block" : "none";
+      if (dropdown.style.display === "block") { renderNotifications(); }
+    }
+
+    function showSuccessMessage(message) {
+      console.log("Showing success message:", message);
+      const successMsg = document.getElementById("success-message");
+      successMsg.textContent = message;
+      successMsg.classList.add("show");
+      setTimeout(() => successMsg.classList.remove("show"), 3000);
+    }
+
+    function showErrorMessage(message) {
+      console.log("Showing error message:", message);
+      const errorMsg = document.getElementById("error-message");
+      errorMsg.textContent = message;
+      errorMsg.classList.add("show");
+      setTimeout(() => errorMsg.classList.remove("show"), 5000);
+    }
+
+    // Image preview handler and event listeners
+    document.addEventListener("DOMContentLoaded", () => {
+      const imageInput = document.getElementById("event-image");
+      const preview = document.getElementById("image-preview");
+      
+      imageInput.addEventListener("change", () => {
+        const file = imageInput.files[0];
+        if (file) {
+          if (file.size > 5 * 1024 * 1024) {
+            showErrorMessage("Image size must be less than 5MB.");
+            imageInput.value = "";
+            preview.src = "";
+            preview.classList.remove("show");
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = e => {
+            preview.src = e.target.result;
+            preview.classList.add("show");
+          };
+          reader.onerror = () => {
+            preview.src = "";
+            preview.classList.remove("show");
+            showErrorMessage("Failed to preview image.");
+          };
+          reader.readAsDataURL(file);
+        } else {
+          preview.src = "";
+          preview.classList.remove("show");
+        }
+      });
+
+      if (localStorage.getItem("darkMode") === "true") {
+        document.body.classList.add("dark-mode");
+      }
+
+      document.getElementById("search-input").addEventListener("input", e => {
+        const category = document.getElementById("category-filter").value;
+        fetchEvents(e.target.value, category);
+      });
+
+      document.getElementById("category-filter").addEventListener("change", e => {
+        const query = document.getElementById("search-input").value;
+        fetchEvents(query, e.target.value);
+      });
+    });
+  </script>
+</body>
+</html>

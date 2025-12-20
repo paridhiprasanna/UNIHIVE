@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UniHive - Discussion Forum</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #fefce8;
+      color: #333;
+      display: flex;
+      height: 100vh;
+      transition: background-color 0.3s ease;
+    }
+
+    /* Dark Mode Styles */
+    body.dark-mode {
+      background-color: #121212;
+      color: #ffffff;
+    }
+
+    .dark-mode .navbar {
+      background-color: #333;
+    }
+
+    .dark-mode .sidebar {
+      background-color: #1e1e1e;
+    }
+
+    .dark-mode .sidebar a {
+      color: #fff;
+    }
+
+    .dark-mode .sidebar a:hover {
+      background-color: #3a3a3a;
+    }
+
+    .dark-mode .main {
+      background-color: #1e1e1e;
+    }
+
+    .dark-mode .card {
+      background-color: #2a2a2a;
+      color: #e5e7eb;
+    }
+
+    .dark-mode .search-bar input,
+    .dark-mode .category-filter select {
+      background-color: #3a3a3a;
+      color: #fff;
+      border-color: #555;
+    }
+
+    .dark-mode .modal-content {
+      background-color: #1e1e1e;
+    }
+
+    .dark-mode .modal-content label,
+    .dark-mode .modal-content input,
+    .dark-mode .modal-content textarea {
+      color: #e5e7eb;
+      border-color: #555;
+    }
+
+    .dark-mode .success-message {
+      background-color: #14532d;
+      color: #fff;
+    }
+
+    /* Navbar */
+    .navbar {
+      background-color: #ca8a04;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: fixed;
+      width: 100%;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .navbar h1 {
+      font-size: 1.8rem;
+      margin: 0;
+    }
+
+    .navbar .logo {
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .navbar .user-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .notification-icon {
+      font-size: 1.6rem;
+      color: #facc15;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.2s;
+    }
+
+    .notification-icon:hover {
+      transform: scale(1.1);
+    }
+
+    .notification-icon span {
+      background: #ef4444;
+      color: white;
+      border-radius: 50%;
+      padding: 0.2rem 0.5rem;
+      font-size: 0.8rem;
+      position: absolute;
+      top: -8px;
+      right: -8px;
+    }
+
+    .notification-dropdown {
+      display: none;
+      position: absolute;
+      right: 2rem;
+      top: 4.5rem;
+      background: white;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      max-height: 200px;
+      overflow-y: auto;
+      animation: fadeIn 0.2s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .notification-dropdown h3 {
+      margin: 0 0 0.5rem;
+      color: #ca8a04;
+      font-size: 1.1rem;
+    }
+
+    .notification-dropdown ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .notification-dropdown li {
+      padding: 0.5rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .notification-dropdown li:hover {
+      background-color: #f3f4f6;
+    }
+
+    .notification-dropdown li.unread {
+      font-weight: bold;
+      color: #ca8a04;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background-color: #facc15;
+      width: 250px;
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      height: 100vh;
+      position: fixed;
+      top: 4rem;
+      left: -250px;
+      transition: left 0.3s ease;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar.open {
+      left: 0;
+    }
+
+    .sidebar h2 {
+      font-size: 1.6rem;
+      color: #78350f;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .sidebar a {
+      text-decoration: none;
+      color: #78350f;
+      font-weight: 600;
+      padding: 0.7rem 1rem;
+      border-radius: 8px;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .sidebar a:hover,
+    .sidebar a.active {
+      background-color: #fde68a;
+      color: #78350f;
+    }
+
+    .sidebar .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 30px;
+      color: #78350f;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .sidebar .close-btn:hover {
+      transform: rotate(90deg);
+    }
+
+    /* Main Content */
+    .main {
+      margin-left: 0;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      overflow-y: auto;
+      transition: margin-left 0.3s ease;
+      margin-top: 4rem;
+    }
+
+    .main h1 {
+      font-size: 2.2rem;
+      margin-bottom: 1.5rem;
+      color: #ca8a04;
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    /* Header with Create Thread Button */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .list-btn {
+      padding: 0.8rem 1.8rem;
+      background-color: #facc15;
+      color: #78350f;
+      border: 2px solid #ca8a04;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .list-btn:hover {
+      background-color: #f59e0b;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .dark-mode .list-btn {
+      background-color: #facc15;
+    }
+
+    .dark-mode .list-btn:hover {
+      background-color: #f59e0b;
+    }
+
+    /* Search and Filter */
+    .search-filter {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .search-bar input,
+    .category-filter select {
+      padding: 0.7rem;
+      font-size: 1rem;
+      border: 2px solid #d1d5db;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 200px; /* Adjusted for better proportions */
+      transition: border-color 0.3s, box-shadow 0.3s, background-color 0.3s;
+      background-color: #fff;
+    }
+
+    .search-bar input:focus,
+    .category-filter select:focus {
+      border-color: #ca8a04;
+      box-shadow: 0 0 10px rgba(202, 138, 4, 0.3);
+      outline: none;
+    }
+
+    .category-filter select {
+      appearance: none;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2378350f' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E") no-repeat right 0.7rem center/1rem;
+      cursor: pointer;
+    }
+
+    .category-filter select:hover {
+      background-color: #f9fafb;
+    }
+
+    .dark-mode .category-filter select:hover {
+      background-color: #4a4a4a;
+    }
+
+    /* Thread Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .card h3 {
+      font-size: 1.3rem;
+      margin-bottom: 0.7rem;
+      color: #4b5563;
+    }
+
+    .card .meta {
+      font-size: 0.9rem;
+      color: #6b7280;
+      margin-bottom: 0.7rem;
+    }
+
+    .card p {
+      font-size: 1rem;
+      color: #6b7280;
+      margin-bottom: 0.7rem;
+    }
+
+    .card .reply-section {
+      margin-top: 1rem;
+      padding-left: 1rem;
+      border-left: 2px solid #ca8a04;
+    }
+
+    .card .reply-section p {
+      margin: 0.5rem 0;
+    }
+
+    .card .reply-form {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .card .reply-input {
+      flex: 1;
+      padding: 0.6rem;
+      border: 2px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      background-color: #fff;
+      transition: border-color 0.3s;
+    }
+
+    .card .reply-input:focus {
+      border-color: #ca8a04;
+      outline: none;
+    }
+
+    .card .reply-btn {
+      padding: 0.6rem 1.2rem;
+      background-color: #facc15;
+      color: #78350f;
+      border-radius: 8px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+    }
+
+    .card .reply-btn:hover {
+      background-color: #fde68a;
+      transform: translateY(-2px);
+    }
+
+    /* Success Message */
+    .success-message {
+      display: none;
+      background-color: #22c55e;
+      color: white;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      font-weight: 600;
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    .success-message.show {
+      display: block;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 200;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal.open {
+      display: flex;
+      opacity: 1;
+    }
+
+    .modal-content {
+      background-color: #fefce8;
+      padding: 2rem;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 500px;
+      position: relative;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal-content .close-icon {
+      position: absolute;
+      top: 1rem;
+      right: 1.5rem;
+      font-size: 1.8rem;
+      color: #78350f;
+      cursor: pointer;
+      transition: color 0.2s, transform 0.2s;
+    }
+
+    .modal-content .close-icon:hover {
+      color: #ca8a04;
+      transform: rotate(90deg);
+    }
+
+    .modal-content h2 {
+      font-size: 1.8rem;
+      color: #ca8a04;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    .modal-content form {
+      display: grid;
+      gap: 1.2rem;
+    }
+
+    .modal-content label {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #4b5563;
+    }
+
+    .modal-content input,
+    .modal-content select,
+    .modal-content textarea {
+      width: 100%;
+      padding: 0.8rem;
+      border: 2px solid #d1d5db;
+      border-radius: 10px;
+      font-size: 1rem;
+      background-color: #fff;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .modal-content input:focus,
+    .modal-content select:focus,
+    .modal-content textarea:focus {
+      border-color: #ca8a04;
+      box-shadow: 0 0 10px rgba(202, 138, 4, 0.3);
+      outline: none;
+    }
+
+    .modal-content textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .modal-content .btn-group {
+      display: flex;
+      gap: 1.2rem;
+      justify-content: flex-end;
+      margin-top: 1.5rem;
+    }
+
+    .modal-content button {
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+    }
+
+    .modal-content .submit-btn {
+      background-color: #facc15;
+      color: #78350f;
+    }
+
+    .modal-content .submit-btn:hover {
+      background-color: #f59e0b;
+      transform: translateY(-2px);
+    }
+
+    .modal-content .cancel-btn {
+      background-color: #e5e7eb;
+      color: #4b5563;
+    }
+
+    .modal-content .cancel-btn:hover {
+      background-color: #d1d5db;
+      transform: translateY(-2px);
+    }
+
+    /* Tooltip */
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
+
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 120px;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 0.3rem 0.5rem;
+      position: absolute;
+      z-index: 300;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -60px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    /* Mobile View */
+    @media (max-width: 768px) {
+      .navbar {
+        padding: 1rem;
+      }
+
+      .navbar h1 {
+        font-size: 1.5rem;
+      }
+
+      .sidebar {
+        width: 100%;
+        left: -100%;
+      }
+
+      .main {
+        padding: 1.5rem;
+      }
+
+      .main h1 {
+        font-size: 1.8rem;
+      }
+
+      .list-btn {
+        padding: 0.6rem 1.2rem;
+        font-size: 1rem;
+      }
+
+      .search-filter {
+        flex-direction: column;
+      }
+
+      .search-bar input,
+      .category-filter select {
+        max-width: 100%;
+      }
+
+      .modal-content {
+        margin: 1rem;
+        padding: 1.5rem;
+        max-width: 90%;
+      }
+
+      .modal-content h2 {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <div class="navbar">
+    <h1 class="logo">UniHive 🐝</h1>
+    <div class="user-info">
+        <span>👤<span id="username-display"></span></span>
+      <div class="tooltip notification-icon" onclick="toggleNotifications()">
+        🔔 <span id="notification-count">0</span>
+        <span class="tooltiptext">View Notifications</span>
+      </div>
+      <button onclick="toggleDarkMode()" class="tooltip" aria-label="Toggle Dark Mode">
+        🌙 <span class="tooltiptext">Toggle Dark Mode</span>
+      </button>
+    </div>
+  </div>
+  <script>
+    const username = localStorage.getItem("username");
+if (username) {
+  document.getElementById("username-display").textContent = username;
+}
+
+  </script>
+  <div id="notification-dropdown" class="notification-dropdown">
+    <h3>Notifications</h3>
+    <ul id="notification-list"></ul>
+  </div>
+
+  <!-- Sidebar -->
+  <div id="mySidenav" class="sidebar">
+    <span class="close-btn" onclick="toggleSidebar()">×</span>
+    <h2>🐝 UniHive</h2>
+    <a href="dashboard.html">Home</a>
+    <a href="buy-sell.html">Buy & Sell</a>
+    <a href="discuss.html" class="active">Discussion Forum</a>
+    <a href="#">Events</a>
+    <a href="#">Clubs</a>
+    <a href="#">Library</a>
+    <a href="#">Logout</a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main">
+    <div class="success-message" id="success-message"></div>
+    <button class="toggle-btn" onclick="toggleSidebar()" aria-label="Toggle Menu">
+      ☰ <span class="tooltiptext">Open Menu</span>
+    </button>
+    <div class="header">
+      <h1>Discussion Forum</h1>
+      <button class="list-btn tooltip" onclick="openModal()" aria-label="Create New Thread">
+        Create Thread <span class="tooltiptext">Start a new discussion</span>
+      </button>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="search-filter">
+      <div class="search-bar">
+        <input type="text" id="search-input" placeholder="Search threads..." aria-label="Search threads" />
+      </div>
+      <div class="category-filter">
+        <select id="category-filter" aria-label="Filter by category">
+          <option value="all">All Categories</option>
+          <option value="General">General</option>
+          <option value="Academics">Academics</option>
+          <option value="Projects">Projects</option>
+          <option value="Off-Topic">Off-Topic</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Thread Grid -->
+    <div class="grid" id="thread-grid"></div>
+
+    <!-- Create Thread Modal -->
+    <div class="modal" id="create-thread-modal" role="dialog" aria-labelledby="modal-title">
+      <div class="modal-content">
+        <span class="close-icon" onclick="closeModal()" aria-label="Close Modal">×</span>
+        <h2 id="modal-title">Create New Thread 🐝</h2>
+        <form id="create-thread-form">
+          <div>
+            <label for="thread-title">Title</label>
+            <input type="text" id="thread-title" placeholder="e.g., Study Group for Finals" required aria-required="true" />
+          </div>
+          <div>
+            <label for="thread-category">Category</label>
+            <select id="thread-category" required aria-required="true">
+              <option value="General">General</option>
+              <option value="Academics">Academics</option>
+              <option value="Projects">Projects</option>
+              <option value="Off-Topic">Off-Topic</option>
+            </select>
+          </div>
+          <div>
+            <label for="thread-content">Content</label>
+            <textarea id="thread-content" placeholder="What's on your mind?" required aria-required="true"></textarea>
+          </div>
+          <div class="btn-group">
+            <button type="button" class="cancel-btn" onclick="closeModal()">Cancel</button>
+            <button type="button" class="submit-btn" onclick="createThread()">Create Thread</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Mock Data
+    let threads = [
+      {
+        id: 1,
+        title: "Welcome to UniHive!",
+        category: "General",
+        content: "Share your ideas and connect with the community!",
+        author: "Admin",
+        timestamp: "2 hours ago",
+        replies: [
+          { id: 1, author: "User1", content: "Excited to be here!", timestamp: "1 hour ago" },
+          { id: 2, author: "Admin", content: "Glad to have you!", timestamp: "30 mins ago" },
+        ],
+      },
+      {
+        id: 2,
+        title: "Project Collaboration",
+        category: "Projects",
+        content: "Looking for teammates for a research project.",
+        author: "StudentX",
+        timestamp: "1 day ago",
+        replies: [
+          { id: 1, author: "User2", content: "Count me in!", timestamp: "12 hours ago" },
+        ],
+      },
+    ];
+
+    let notifications = [];
+    const currentUser = "John Doe"; // Mock current user
+
+    // Render Threads
+    function renderThreads(query = "", category = "all") {
+      const threadGrid = document.getElementById("thread-grid");
+      let filteredThreads = threads;
+
+      if (query) {
+        filteredThreads = filteredThreads.filter(
+          (thread) =>
+            thread.title.toLowerCase().includes(query.toLowerCase()) ||
+            thread.content.toLowerCase().includes(query.toLowerCase())
+        );
+      }
+
+      if (category !== "all") {
+        filteredThreads = filteredThreads.filter((thread) => thread.category === category);
+      }
+
+      threadGrid.innerHTML =
+        filteredThreads.length > 0
+          ? filteredThreads
+              .map(
+                (thread) => `
+                <div class="card">
+                  <h3>${thread.title}</h3>
+                  <p class="meta">Posted by ${thread.author} • ${thread.timestamp} • ${thread.replies.length} replies</p>
+                  <p><strong>${thread.category}</strong></p>
+                  <p>${thread.content}</p>
+                  <div class="reply-section">
+                    ${thread.replies
+                      .map(
+                        (reply) =>
+                          <p><strong>${reply.author}:</strong> ${reply.content} <em>(${reply.timestamp})</em></p>
+                      )
+                      .join("")}
+                  </div>
+                  <div class="reply-form">
+                    <input type="text" class="reply-input" placeholder="Add a reply..." aria-label="Reply to thread" data-thread-id="${thread.id}" />
+                    <button class="reply-btn" onclick="addReply(${thread.id})">Reply</button>
+                  </div>
+                </div>
+              `
+              )
+              .join("")
+          : '<p style="grid-column: 1 / -1; text-align: center; color: #6b7280;">No threads found.</p>';
+    }
+
+    // Create New Thread
+    function createThread() {
+      const title = document.getElementById("thread-title").value;
+      const category = document.getElementById("thread-category").value;
+      const content = document.getElementById("thread-content").value;
+      const timestamp = new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
+
+      if (title && category && content) {
+        threads.push({
+          id: threads.length + 1,
+          title,
+          category,
+          content,
+          author: currentUser,
+          timestamp: "Just now",
+          replies: [],
+        });
+        closeModal();
+        renderThreads();
+        showSuccessMessage("Thread created successfully! 🐝");
+        notifyUsers('New thread created: ${title}');
+      } else {
+        alert("Please fill in all required fields (Title, Category, Content).");
+      }
+    }
+
+    // Add Reply
+    function addReply(threadId) {
+      const input = document.querySelector('.reply-input[data-thread-id="${threadId}"]');
+      const content = input.value.trim();
+      if (content) {
+        const thread = threads.find((t) => t.id === threadId);
+        thread.replies.push({
+          id: thread.replies.length + 1,
+          author: currentUser,
+          content,
+          timestamp: "Just now",
+        });
+        input.value = "";
+        renderThreads();
+        notifyUsers('New reply to thread ID ${threadId} by ${currentUser}');
+      }
+    }
+
+    // Modal Controls
+    function openModal() {
+      const modal = document.getElementById("create-thread-modal");
+      modal.classList.add("open");
+    }
+
+    function closeModal() {
+      const modal = document.getElementById("create-thread-modal");
+      modal.classList.remove("open");
+      document.getElementById("create-thread-form").reset();
+    }
+
+    // Toggle Sidebar
+    function toggleSidebar() {
+      const sidebar = document.getElementById("mySidenav");
+      const mainContent = document.querySelector(".main");
+      sidebar.classList.toggle("open");
+      mainContent.classList.toggle("open");
+    }
+
+    // Toggle Dark Mode
+    function toggleDarkMode() {
+  document.body.classList.toggle("dark-mode");
+  const button = document.querySelector(".navbar .user-info button");
+  button.textContent = document.body.classList.contains("dark-mode") ? "☀" : "🌙";
+}
+    // Notifications
+    function notifyUsers(message) {
+      notifications.push({ message, read: false });
+      updateNotificationCount();
+    }
+
+    function updateNotificationCount() {
+      const unread = notifications.filter((n) => !n.read).length;
+      document.getElementById("notification-count").textContent = unread || 0;
+    }
+
+    function toggleNotifications() {
+      const dropdown = document.getElementById("notification-dropdown");
+      dropdown.style.display = dropdown.style.display === "none" ? "block" : "none";
+      if (dropdown.style.display === "block") {
+        renderNotifications();
+      }
+    }
+
+    function renderNotifications() {
+      const list = document.getElementById("notification-list");
+      list.innerHTML = "";
+      notifications.forEach((notif, index) => {
+        const li = document.createElement("li");
+        li.textContent = notif.message;
+        if (!notif.read) {
+          li.className = "unread";
+          li.onclick = () => {
+            notif.read = true;
+            updateNotificationCount();
+            renderNotifications();
+          };
+        }
+        list.appendChild(li);
+      });
+    }
+
+    // Success Message
+    function showSuccessMessage(message) {
+      const successMsg = document.getElementById("success-message");
+      successMsg.textContent = message;
+      successMsg.classList.add("show");
+      setTimeout(() => successMsg.classList.remove("show"), 3000);
+    }
+
+    // Event Listeners
+    document.getElementById("search-input").addEventListener("input", (e) => {
+      const category = document.getElementById("category-filter").value;
+      renderThreads(e.target.value, category);
+    });
+
+    document.getElementById("category-filter").addEventListener("change", (e) => {
+      const query = document.getElementById("search-input").value;
+      renderThreads(query, e.target.value);
+    });
+
+    // Initial Render
+    renderThreads();
+  </script>
+</body>
+</html>

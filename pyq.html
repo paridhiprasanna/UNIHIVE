@@ -1,0 +1,185 @@
+<style>
+  body {
+    background-color: #d6e7fb;
+    /* Soft pastel blue */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    /* Clean font */
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Main Dropdown */
+  .dropdown {
+    position: relative;
+    display: inline-block;
+    margin: 20px;
+  }
+
+  .dropbtn {
+    background-color: #f8c8df;
+    /* Soft pastel pink */
+    color: #34495e;
+    /* Darker text for contrast */
+    padding: 12px 25px;
+    font-size: 18px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .dropbtn:hover {
+    background-color: #f0a6b8;
+    /* Slightly deeper pastel pink */
+    transform: scale(1.05);
+  }
+
+  .dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #ffffff;
+    min-width: 320px;
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    z-index: 1;
+    border-radius: 12px;
+    margin-top: 10px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .dropdown:hover .dropdown-content {
+    display: block;
+    opacity: 1;
+  }
+
+  /* Subject Titles */
+  .subject-title {
+    font-weight: bold;
+    font-size: 20px;
+    color: #34495e;
+    /* Darker grey text for contrast */
+    margin-top: 15px;
+    display: block;
+  }
+
+  /* Year Boxes */
+  .dropdown-year {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin: 15px 0;
+  }
+
+  .year-box {
+    background-color: #f7c6d5;
+    /* Light pastel pink */
+    color: #2c3e50;
+    /* Dark text for readability */
+    padding: 12px 18px;
+    border-radius: 12px;
+    text-decoration: none;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    font-size: 16px;
+    font-weight: bold;
+  }
+
+  .year-box:hover {
+    transform: translateY(-5px);
+    background-color: #a5d8d1;
+    /* Pastel teal for hover */
+    color: #34495e;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Mobile Responsiveness */
+  @media (max-width: 600px) {
+    .dropdown-content {
+      min-width: 240px;
+    }
+
+    .year-box {
+      font-size: 14px;
+      padding: 10px 15px;
+    }
+  }
+  .meme-grid {
+  display: flex;
+  justify-content: space-around; /* Space out the memes evenly */
+  gap: 20px;
+  padding: 20px;
+  overflow-x: auto; /* Make the row scrollable if there are too many images */
+}
+
+.meme-grid img {
+  width: 300px; /* Adjust the width of the images to fit nicely in a row */
+  height: auto;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  display: inline-block;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.meme-grid img:hover {
+  transform: scale(1.03);
+}
+
+@media (max-width: 768px) {
+  .meme-grid img {
+    width: 150px; /* Adjust size for smaller screens */
+  }
+}
+
+@media (max-width: 480px) {
+  .meme-grid img {
+    width: 120px; /* Adjust size for very small screens */
+  }
+}
+
+</style>
+
+<div class="dropdown">
+  <button class="dropbtn">📝Previous Year Questions</button>
+  <div class="dropdown-content">
+    <div class="dropdown-subject">
+      <span class="subject-title">PPS</span>
+      <div class="dropdown-year">
+        <a href="PPS1.html" class="year-box" target="_blank">First Year</a>
+        <a href="/pyq/cs/second-year" class="year-box">Second Year</a>
+        <a href="/pyq/cs/third-year" class="year-box">Third Year</a>
+      </div>
+    </div>
+
+    <div class="dropdown-subject">
+      <span class="subject-title">Mathematics</span>
+      <div class="dropdown-year">
+        <a href="/pyq/ece/first-year" class="year-box">First Year</a>
+        <a href="/pyq/ece/second-year" class="year-box">Second Year</a>
+        <a href="/pyq/ece/third-year" class="year-box">Third Year</a>
+      </div>
+    </div>
+
+    <div class="dropdown-subject">
+      <span class="subject-title">CAEG</span>
+      <div class="dropdown-year">
+        <a href="/pyq/mech/first-year" class="year-box">First Year</a>
+        <a href="/pyq/mech/second-year" class="year-box">Second Year</a>
+        <a href="/pyq/mech/third-year" class="year-box">Third Year</a>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Meme Wall Section -->
+<div class="meme-wall">
+  <h2>😂 Take a Chill Pill – Meme Wall</h2>
+  <div class="meme-grid">
+    <img src="ques.jpeg">
+    <img src="pyq4.jpg">
+    <img src="pyq2.jpg">
+    <img src="pyq3.jpg">
+  </div>
+</div>

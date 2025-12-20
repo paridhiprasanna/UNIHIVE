@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Notes Archive</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background-color: #f5faff;
+    }
+
+    header {
+      background-color: #FDD835;
+      color: #1a1a1a;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      margin: 0;
+    }
+
+    .year-box {
+      background-color: #ffffff;
+      margin: 2rem auto;
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      box-shadow: 4px 4px 0px #b0c4de;
+      display: inline-block; /* shrink box to content */
+      max-width: 90%;
+    }
+
+    .year-title {
+      font-size: 1.8rem;
+      color: #003366;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .semester-buttons {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .semester-buttons a {
+    background-color: #FDD835;
+    color: #000;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+    .semester-buttons button:hover {
+      background-color: #e6c200;
+    }
+
+    .notes-container {
+      display: none;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1rem;
+      justify-content: center;
+    }
+
+    .notes-container.active {
+      display: flex;
+    }
+
+    .note-card {
+      background-color: #ffffff;
+      padding: 1rem;
+      border-radius: 12px;
+      width: 200px;
+      box-shadow: 4px 4px 0px #b0c4de;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .note-card h2 {
+      font-size: 1rem;
+      margin-bottom: 0.8rem;
+      color: #002244;
+    }
+
+    .note-card a {
+      text-decoration: none;
+      background-color: #FDD835;
+      color: #000;
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+
+    .note-card a:hover {
+      background-color: #e6c200;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>📘 Notes Archive</h1>
+  </header>
+
+  <div class="year-box">
+    <div class="year-title">1st Year</div>
+    <div class="semester-buttons">
+        <a href="sem1.html">1st Semester</a>
+        <a href="sem2.html">2nd Semester</a>
+      </div>
+      
+
+    <div id="sem1" class="notes-container">
+      <div class="note-card">
+        <h2>Engineering Mathematics I</h2>
+        <a href="#">Download PDF</a>
+      </div>
+      <div class="note-card">
+        <h2>Introduction to Programming</h2>
+        <a href="#">Download PDF</a>
+      </div>
+    </div>
+
+    <div id="sem2" class="notes-container">
+      <div class="note-card">
+        <h2>Basic Electronics</h2>
+        <a href="#">Download PDF</a>
+      </div>
+      <div class="note-card">
+        <h2>Computer Networks</h2>
+        <a href="#">Download PDF</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleSemester(id) {
+      const target = document.getElementById(id);
+      const isActive = target.classList.contains('active');
+
+      // Hide all semester sections first
+      document.querySelectorAll('.notes-container').forEach(c => c.classList.remove('active'));
+
+      // Toggle only if it wasn't already active
+      if (!isActive) {
+        target.classList.add('active');
+      }
+    }
+  </script>
+
+</body>
+</html>

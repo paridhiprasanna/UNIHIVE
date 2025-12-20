@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" >
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UniHive Dashboard</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #fefce8;
+      color: #333;
+      display: flex;
+      height: 100vh;
+      transition: background-color 0.3s ease;
+    }
+
+    body.dark-mode {
+      background-color: #121212;
+      color: #ffffff;
+    }
+
+    .dark-mode .navbar { background-color: #333; }
+    .dark-mode .sidebar { background-color: #1e1e1e; }
+    .dark-mode .sidebar a { color: #fff; }
+    .dark-mode .sidebar a:hover { background-color: #3a3a3a; }
+    .dark-mode .main { background-color: #1e1e1e; }
+    .dark-mode .card { background-color: #2a2a2a; color: #e5e7eb; }
+    .dark-mode .todo-input input { background-color: #3a3a3a; color: #fff; border-color: #555; }
+    .dark-mode #todoList li { background: #3a3a3a; color: #e5e7eb; }
+
+    .navbar {
+      background-color: #ca8a04;
+      color: white;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: fixed;
+      width: 100%;
+      top: 0;
+      left: 0;
+      z-index: 100;
+    }
+    .navbar h1 { font-size: 1.5rem; margin: 0; }
+    .navbar .user-info { display: flex; align-items: center; }
+    .navbar .user-info span { margin-right: 1rem; }
+
+    .sidebar {
+      background-color: #facc15;
+      width: 240px;
+      padding: 2rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      height: 100vh;
+      position: fixed;
+      top: 4rem;
+      left: -240px;
+      transition: left 0.3s ease;
+    }
+
+    .sidebar.open { left: 0; }
+    .sidebar h2 {
+      font-size: 1.5rem;
+      color: #78350f;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .sidebar a {
+      text-decoration: none;
+      color: #78350f;
+      font-weight: bold;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      transition: background 0.3s;
+    }
+
+    .sidebar a:hover { background-color: #fde68a; }
+    .sidebar .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 30px;
+      color: #78350f;
+      cursor: pointer;
+    }
+
+    .main {
+      margin-left: 0;
+      padding: 2rem;
+      width: 100%;
+      overflow-y: auto;
+      transition: margin-left 0.3s ease;
+      margin-top: 4rem;
+    }
+
+    .main h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: #ca8a04;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+    }
+
+    .card h2 {
+      font-size: 1.2rem;
+      margin-bottom: 0.5rem;
+      color: #4b5563;
+    }
+
+    .card p {
+      font-size: 0.95rem;
+      color: #6b7280;
+    }
+
+    .toggle-btn {
+      font-size: 30px;
+      cursor: pointer;
+      background-color: #facc15;
+      border: none;
+      padding: 10px 20px;
+      color: white;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .todo-input {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .todo-input input {
+      flex: 1;
+      padding: 0.6rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    .todo-input button {
+      background-color: #ca8a04;
+      border: none;
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      font-size: 1.2rem;
+      color: white;
+      cursor: pointer;
+    }
+
+    .todo-input button:hover {
+      background-color: #a16207;
+    }
+
+    #todoList {
+      list-style: none;
+      padding: 0;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    #todoList li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fde68a;
+      margin-bottom: 0.5rem;
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+
+    #todoList li.completed {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+
+    .card button.delete-btn {
+      background: transparent;
+      border: none;
+      color: #b91c1c;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        left: -100%;
+        width: 100%;
+        position: fixed;
+      }
+
+      .main {
+        margin-left: 0;
+        padding: 1rem;
+      }
+
+      .toggle-btn {
+        display: inline-block;
+      }
+    }
+  </style>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <div class="navbar">
+    <h1>UniHive Dashboard</h1>
+    <div class="user-info">
+      <span id="username-display">👤 Loading...</span>
+      <button onclick="toggleDarkMode()">🌙</button>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div id="mySidenav" class="sidebar">
+    <span class="close-btn" onclick="toggleSidebar()">×</span>
+    <h2>🐝 UniHive</h2>
+    <a href="buy.html">Buy & Sell</a>
+    <a href="discuss.html">Discussion Forum</a>
+    <a href="events.html">Events</a>
+    <a href="clubs.html">Club Registrations</a>
+    <a href="elibrary.html">Library</a>
+    <a href="about.html">About</a>
+    <a href="#" onclick="firebase.auth().signOut()">Logout</a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main">
+    <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+    <h1>Welcome to UniHive!</h1>
+    <div class="grid">
+      <div class="card">
+        <h2>📅 Upcoming Events</h2>
+        <p>Orientation Bootcamp – Apr 20<br>AI Workshop – Apr 25</p>
+      </div>
+      <div class="card">
+        <h2>🛍 Buy & Sell</h2>
+        <p>Laptop for sale – ₹25K<br>Books: DSA, DBMS<br><em>Post your item today!</em></p>
+      </div>
+      <div class="card">
+        <h2>🔔 Notifications</h2>
+        <p>You've joined HackHive 2025 🐝<br>Your idea was approved by mentor</p>
+      </div>
+      <div class="card">
+        <h2>📝 Your To-Do List</h2>
+        <div class="todo-input">
+          <input type="text" id="todoInput" placeholder="Add a new task..." />
+          <button onclick="addTask()">➕</button>
+        </div>
+        <ul id="todoList"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBnPy5bVzYj53TpBfeXIM--aLue4qgLJtU",
+      authDomain: "unihive-a8959.firebaseapp.com",
+      projectId: "unihive-a8959",
+      storageBucket: "unihive-a8959.appspot.com",
+      messagingSenderId: "19484479047",
+      appId: "1:19484479047:web:b8b61a81d65fe479d5ab62",
+      measurementId: "G-3SNN0K0BV2"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    db.enablePersistence().catch(error => {
+      console.warn("Firestore offline persistence failed:", error);
+    });
+
+    let currentUserId = null;
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById("mySidenav");
+      const mainContent = document.querySelector(".main");
+      sidebar.classList.toggle("open");
+      mainContent.classList.toggle("open");
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark-mode");
+      const button = document.querySelector(".navbar .user-info button");
+      button.textContent = document.body.classList.contains("dark-mode") ? "☀️" : "🌙";
+    }
+
+    auth.onAuthStateChanged(user => {
+      const display = document.getElementById("username-display");
+      if (user) {
+        currentUserId = user.uid;
+        db.collection("users").doc(user.uid).get().then(doc => {
+          if (doc.exists) {
+            display.textContent = "👤 " + doc.data().username;
+          } else {
+            display.textContent = "👤 Unknown User";
+          }
+          loadTasks(); // Load tasks after user is authenticated
+        }).catch(error => {
+          console.error("Error fetching user data:", error);
+          display.textContent = "👤 Error";
+          loadTasks();
+        });
+      } else {
+        currentUserId = null;
+        display.textContent = "👤 Guest";
+        document.getElementById("todoList").innerHTML = "<li>Please sign in to manage your to-do list.</li>";
+      }
+    });
+
+    async function loadTasks() {
+      if (!currentUserId) return;
+      const list = document.getElementById("todoList");
+      list.innerHTML = "<li>Loading tasks...</li>";
+
+      try {
+        const snapshot = await db.collection("todos")
+          .doc(currentUserId)
+          .collection("tasks")
+          .orderBy("createdAt", "desc")
+          .get();
+
+        const tasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        list.innerHTML = "";
+        if (tasks.length === 0) {
+          list.innerHTML = "<li>No tasks yet. Add one above!</li>";
+        }
+        tasks.forEach((task, i) => {
+          const li = document.createElement("li");
+          li.className = task.completed ? "completed" : "";
+          li.innerHTML = `
+            <span onclick="toggleComplete('${task.id}')">${task.text}</span>
+            <button class="delete-btn" onclick="deleteTask('${task.id}')">🗑️</button>
+          `;
+          list.appendChild(li);
+        });
+      } catch (error) {
+        console.error("Error loading tasks:", error);
+        list.innerHTML = "<li>Failed to load tasks.</li>";
+      }
+    }
+
+    async function addTask() {
+      if (!currentUserId) {
+        alert("Please sign in to add tasks.");
+        return;
+      }
+      const input = document.getElementById("todoInput");
+      const text = input.value.trim();
+      if (text === "") return;
+
+      try {
+        await db.collection("todos")
+          .doc(currentUserId)
+          .collection("tasks")
+          .add({
+            text,
+            completed: false,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        input.value = "";
+        loadTasks();
+      } catch (error) {
+        console.error("Error adding task:", error);
+        alert("Failed to add task: " + error.message);
+      }
+    }
+
+    async function deleteTask(taskId) {
+      if (!currentUserId) return;
+      try {
+        await db.collection("todos")
+          .doc(currentUserId)
+          .collection("tasks")
+          .doc(taskId)
+          .delete();
+        loadTasks();
+      } catch (error) {
+        console.error("Error deleting task:", error);
+        alert("Failed to delete task: " + error.message);
+      }
+    }
+
+    async function toggleComplete(taskId) {
+      if (!currentUserId) return;
+      try {
+        const taskRef = db.collection("todos")
+          .doc(currentUserId)
+          .collection("tasks")
+          .doc(taskId);
+        const doc = await taskRef.get();
+        if (doc.exists) {
+          await taskRef.update({ completed: !doc.data().completed });
+          loadTasks();
+        }
+      } catch (error) {
+        console.error("Error toggling task completion:", error);
+        alert("Failed to update task: " + error.message);
+      }
+    }
+
+    window.addEventListener("online", loadTasks);
+    window.addEventListener("offline", () => {
+      const list = document.getElementById("todoList");
+      list.innerHTML = "<li>You are offline. Tasks will sync when you're back online.</li>";
+    });
+  </script>
+</body>
+</html>

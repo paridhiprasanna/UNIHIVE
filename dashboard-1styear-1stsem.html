@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>1st Year - 1st Semester Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background-color: #f5f7fa;
+    }
+
+    header {
+      background-color: #facc15;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    main {
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 1rem;
+    }
+
+    h2 {
+      margin-bottom: 1rem;
+      color: #2c3e50;
+    }
+
+    .subject-card {
+      background: white;
+      border-radius: 10px;
+      padding: 1rem 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .subject-card h3 {
+      margin: 0 0 0.5rem;
+      color: #34495e;
+    }
+
+    .subject-card p {
+      margin: 0.25rem 0;
+    }
+    .borrow-option {
+      margin-top: 1rem;
+    }
+
+    .return-date {
+      display: none;
+      margin-top: 0.5rem;
+    }
+
+    /* Beautiful button styling */
+    button {
+      background-color: #ff9800; /* Bright orange */
+      color: white;
+      font-size: 1rem;
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    button:hover {
+      background-color: #e68900; /* Darker orange for hover effect */
+      transform: scale(1.05);
+    }
+
+    button:focus {
+      outline: none;
+    }
+
+    footer {
+      background: #2c3e50;
+      color: white;
+      text-align: center;
+      padding: 1rem;
+      margin-top: 3rem;
+    }
+  </style>
+  <script>
+    function showReturnDate(element, returnDate) {
+      const returnDateDiv = element.nextElementSibling;
+      const dateInput = returnDateDiv.querySelector('input');
+      
+      // Check if the return date div is visible
+      if (returnDateDiv.style.display === 'block') {
+        returnDateDiv.style.display = 'none';  // Hide the return date if it's visible
+      } else {
+        returnDateDiv.style.display = 'block';  // Show the return date
+        dateInput.value = returnDate; // Automatically set the return date
+      }
+    }
+    </script>
+</head>
+<body>
+  <header>
+    <h1>1st Year - 1st Semester Dashboard</h1>
+  </header>
+
+  <main>
+    <h2>Subjects Overview</h2>
+
+    <div class="subject-card">
+      <h3>Mathematics - 1</h3>
+      <p><strong>Books Available:</strong> 5</p>
+      <div class="borrow-option">
+        <button onclick="showReturnDate(this, '2025-05-20')">Borrow this book</button>
+        <div class="return-date">
+          <p><strong>Expected Return Date:</strong> <input type="date" readonly /></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="subject-card">
+      <h3>Engineering Physics</h3>
+      <p><strong>Books Available:</strong> 2</p>
+      <button onclick="showReturnDate(this, '2025-05-25')">Borrow this book</button>
+        <div class="return-date">
+          <p><strong>Expected Return Date:</strong> <input type="date" readonly /></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="subject-card">
+      <h3>Programming for Problem Solving</h3>
+      <p><strong>Books Available:</strong> 1</p>
+      <button onclick="showReturnDate(this, '2025-05-19')">Borrow this book</button>
+        <div class="return-date">
+          <p><strong>Expected Return Date:</strong> <input type="date" readonly /></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="subject-card">
+      <h3>English</h3>
+      <p><strong>Books Available:</strong> 3</p>
+      <div class="borrow-option">
+        <button onclick="showReturnDate(this, '2025-05-28')">Borrow this book</button>
+        <div class="return-date">
+          <p><strong>Expected Return Date:</strong> <input type="date" readonly /></p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2025 College E-Library
+  </footer>
+</body>
+</html>

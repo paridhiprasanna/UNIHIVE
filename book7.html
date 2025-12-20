@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Book Availability - Cybersecurity</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .book-info {
+            margin-top: 20px;
+        }
+        .label {
+            font-weight: bold;
+            color: #555;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .available {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .borrowed {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Book Availability</h1>
+        <div class="book-info">
+            <p><span class="label">Title:</span> Cybersecurity</p>
+            <p><span class="label">Author:</span> Richard Green</p>
+            <p><span class="label">Category:</span> 4th Year</p>
+            <p><span class="label">Semester:</span> 2nd Semester</p>
+            <p><span class="label">Number of Copies Available:</span> <span id="available-copies">3</span></p>
+
+            <!-- Dynamic status styling -->
+            <div class="status available" id="book-status">Available</div>
+            <!-- <div class="status borrowed" id="book-status">Currently Borrowed</div> -->
+        </div>
+    </div>
+</body>
+</html>

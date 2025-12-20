@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UniHive - Discussion Forum</title>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #fefce8;
+      color: #333;
+      display: flex;
+      height: 100vh;
+      transition: background-color 0.3s ease;
+    }
+
+    body.dark-mode {
+      background-color: #121212;
+      color: #ffffff;
+    }
+
+    .dark-mode .navbar { background-color: #333; }
+    .dark-mode .sidebar { background-color: #1e1e1e; }
+    .dark-mode .sidebar a { color: #fff; }
+    .dark-mode .sidebar a:hover { background-color: #3a3a3a; }
+    .dark-mode .main { background-color: #1e1e1e; }
+    .dark-mode .card { background-color: #2a2a2a; color: #e5e7eb; }
+    .dark-mode .search-bar input,
+    .dark-mode .category-filter select {
+      background-color: #3a3a3a;
+      color: #fff;
+      border-color: #555;
+    }
+    .dark-mode .modal-content { background-color: #1e1e1e; }
+    .dark-mode .modal-content label,
+    .dark-mode .modal-content input,
+    .dark-mode .modal-content textarea {
+      color: #e5e7eb;
+      border-color: #555;
+    }
+    .dark-mode .success-message, .dark-mode .error-message { background-color: #14532d; color: #fff; }
+    .dark-mode .toggle-btn { background-color: #3a3a3a; }
+    .dark-mode .toggle-btn:hover { background-color: #4a4a4a; }
+    .dark-mode .list-btn { background-color: #facc15; }
+    .dark-mode .list-btn:hover { background-color: #f59e0b; }
+    .dark-mode .reply-btn { background-color: #facc15; }
+    .dark-mode .reply-btn:hover { background-color: #fde68a; }
+    .dark-mode .delete-btn { background-color: #ef4444; }
+    .dark-mode .delete-btn:hover { background-color: #dc2626; }
+
+    .navbar {
+      background-color: #ca8a04;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: fixed;
+      width: 100%;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .navbar h1 { font-size: 1.8rem; margin: 0; }
+    .navbar .logo { font-weight: bold; letter-spacing: 1px; }
+    .navbar .user-info { display: flex; align-items: center; gap: 1rem; }
+
+    .notification-icon {
+      font-size: 1.6rem;
+      color: #facc15;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.2s;
+    }
+    .notification-icon:hover { transform: scale(1.1); }
+    .notification-icon span {
+      background: #ef4444;
+      color: white;
+      border-radius: 50%;
+      padding: 0.2rem 0.5rem;
+      font-size: 0.8rem;
+      position: absolute;
+      top: -8px;
+      right: -8px;
+    }
+
+    .notification-dropdown {
+      display: none;
+      position: absolute;
+      right: 2rem;
+      top: 4.5rem;
+      background: white;
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      max-height: 200px;
+      overflow-y: auto;
+      animation: fadeIn 0.2s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .notification-dropdown h3 {
+      margin: 0 0 0.5rem;
+      color: #ca8a04;
+      font-size: 1.1rem;
+    }
+    .notification-dropdown ul { list-style: none; padding: 0; margin: 0; }
+    .notification-dropdown li {
+      padding: 0.5rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .notification-dropdown li:hover { background-color: #f3f4f6; }
+    .notification-dropdown li.unread { font-weight: bold; color: #ca8a04; }
+
+    .sidebar {
+      background-color: #facc15;
+      width: 250px;
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      height: 100vh;
+      position: fixed;
+      top: 4rem;
+      left: -250px;
+      transition: left 0.3s ease;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+      z-index: 99;
+    }
+
+    .sidebar.open { left: 0; }
+    .sidebar h2 {
+      font-size: 1.6rem;
+      color: #78350f;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .sidebar a {
+      text-decoration: none;
+      color: #78350f;
+      font-weight: 600;
+      padding: 0.7rem 1rem;
+      border-radius: 8px;
+      transition: background 0.3s, color 0.3s;
+    }
+    .sidebar a:hover,
+    .sidebar a.active { background-color: #fde68a; color: #78350f; }
+    .sidebar .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 30px;
+      color: #78350f;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .sidebar .close-btn:hover { transform: rotate(90deg); }
+
+    .main {
+      margin-left: 0;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      overflow-y: auto;
+      transition: margin-left 0.3s ease;
+      margin-top: 4rem;
+      position: relative;
+      z-index: 1;
+    }
+    .main.open { margin-left: 250px; }
+    .main h1 {
+      font-size: 2.2rem;
+      margin-bottom: 1.5rem;
+      color: #ca8a04;
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    .toggle-btn {
+      position: fixed;
+      top: 1.2rem;
+      left: 1rem;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      background-color: #facc15;
+      border: none;
+      border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+      z-index: 101;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 0;
+    }
+    .toggle-btn .hamburger-line {
+      width: 24px;
+      height: 3px;
+      background-color: #fff;
+      margin: 3px 0;
+      transition: background-color 0.3s;
+    }
+    .toggle-btn:hover {
+      background-color: #f59e0b;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    .toggle-btn:focus {
+      outline: 2px solid #ca8a04;
+      outline-offset: 2px;
+    }
+    .dark-mode .toggle-btn { background-color: #3a3a3a; }
+    .dark-mode .toggle-btn:hover { background-color: #4a4a4a; }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .list-btn {
+      padding: 0.8rem 1.8rem;
+      background-color: #facc15;
+      color: #78350f;
+      border: 2px solid #ca8a04;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+    .list-btn:hover {
+      background-color: #f59e0b;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+    }
+    .list-btn:disabled {
+      background-color: #d1d5db;
+      color: #6b7280;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .search-filter {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .search-bar input,
+    .category-filter select {
+      padding: 0.7rem;
+      font-size: 1rem;
+      border: 2px solid #d1d5db;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 200px;
+      transition: border-color 0.3s, box-shadow 0.3s, background-color 0.3s;
+      background-color: #fff;
+    }
+    .search-bar input:focus,
+    .category-filter select:focus {
+      border-color: #ca8a04;
+      box-shadow: 0 0 10px rgba(202, 138, 4, 0.3);
+      outline: none;
+    }
+    .category-filter select {
+      appearance: none;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2378350f' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E") no-repeat right 0.7rem center/1rem;
+      cursor: pointer;
+    }
+    .category-filter select:hover { background-color: #f9fafb; }
+    .dark-mode .category-filter select:hover { background-color: #4a4a4a; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+    .card h3 {
+      font-size: 1.3rem;
+      margin-bottom: 0.7rem;
+      color: #4b5563;
+    }
+    .card .meta {
+      font-size: 0.9rem;
+      color: #6b7280;
+      margin-bottom: 0.7rem;
+    }
+    .card p {
+      font-size: 1rem;
+      color: #6b7280;
+      margin-bottom: 0.7rem;
+    }
+    .card .reply-section {
+      margin-top: 1rem;
+      padding-left: 1rem;
+      border-left: 2px solid #ca8a04;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .card .reply-section p {
+      margin: 0.5rem 0;
+    }
+    .card .reply-form {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    .card .reply-input {
+      flex: 1;
+      padding: 0.6rem;
+      border: 2px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      background-color: #fff;
+      transition: border-color 0.3s;
+    }
+    .card .reply-input:focus {
+      border-color: #ca8a04;
+      outline: none;
+    }
+    .card .reply-btn {
+      padding: 0.6rem 1.2rem;
+      background-color: #facc15;
+      color: #78350f;
+      border-radius: 8px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+    }
+    .card .reply-btn:hover {
+      background-color: #fde68a;
+      transform: translateY(-2px);
+    }
+    .card .delete-btn {
+      padding: 0.6rem 1.2rem;
+      background-color: #ef4444;
+      color: white;
+      border-radius: 8px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+      margin-top: 1rem;
+    }
+    .card .delete-btn:hover {
+      background-color: #dc2626;
+      transform: translateY(-2px);
+    }
+
+    .success-message, .error-message {
+      display: none;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      font-weight: 600;
+      animation: fadeIn 0.5s ease-in;
+    }
+    .success-message.show, .error-message.show { display: block; }
+    .success-message { background-color: #22c55e; color: white; }
+    .error-message { background-color: #ef4444; color: white; }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 200;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .modal.open {
+      display: flex;
+      opacity: 1;
+    }
+    .modal-content {
+      background-color: #fefce8;
+      padding: 2rem;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 500px;
+      position: relative;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      animation: slideUp 0.3s ease-out;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-content .close-icon {
+      position: absolute;
+      top: 1rem;
+      right: 1.5rem;
+      font-size: 1.8rem;
+      color: #78350f;
+      cursor: pointer;
+      transition: color 0.2s, transform 0.2s;
+    }
+    .modal-content .close-icon:hover {
+      color: #ca8a04;
+      transform: rotate(90deg);
+    }
+    .modal-content h2 {
+      font-size: 1.8rem;
+      color: #ca8a04;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    .modal-content form {
+      display: grid;
+      gap: 1.2rem;
+    }
+    .modal-content label {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #4b5563;
+    }
+    .modal-content input,
+    .modal-content select,
+    .modal-content textarea {
+      width: 100%;
+      padding: 0.8rem;
+      border: 2px solid #d1d5db;
+      border-radius: 10px;
+      font-size: 1rem;
+      background-color: #fff;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .modal-content input:focus,
+    .modal-content select:focus,
+    .modal-content textarea:focus {
+      border-color: #ca8a04;
+      box-shadow: 0 0 10px rgba(202, 138, 4, 0.3);
+      outline: none;
+    }
+    .modal-content textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+    .modal-content .btn-group {
+      display: flex;
+      gap: 1.2rem;
+      justify-content: flex-end;
+      margin-top: 1.5rem;
+    }
+    .modal-content button {
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+    }
+    .modal-content .submit-btn {
+      background-color: #facc15;
+      color: #78350f;
+    }
+    .modal-content .submit-btn:hover {
+      background-color: #f59e0b;
+      transform: translateY(-2px);
+    }
+    .modal-content .submit-btn:disabled {
+      background-color: #d1d5db;
+      color: #6b7280;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .modal-content .cancel-btn {
+      background-color: #e5e7eb;
+      color: #4b5563;
+    }
+    .modal-content .cancel-btn:hover {
+      background-color: #d1d5db;
+      transform: translateY(-2px);
+    }
+
+    .tooltip { position: relative; display: inline-block; }
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 120px;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 0.3rem 0.5rem;
+      position: absolute;
+      z-index: 300;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -60px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
+
+    @media (max-width: 768px) {
+      .navbar { padding: 1rem; }
+      .navbar h1 { font-size: 1.5rem; }
+      .sidebar { width: 100%; left: -100%; }
+      .main { padding: 1.5rem; }
+      .main.open { margin-left: 0; }
+      .main h1 { font-size: 1.8rem; }
+      .toggle-btn { width: 36px; height: 36px; top: 1rem; left: 0.8rem; }
+      .toggle-btn .hamburger-line { width: 20px; height: 2px; margin: 2px 0; }
+      .list-btn { padding: 0.6rem 1.2rem; font-size: 1rem; }
+      .search-filter { flex-direction: column; }
+      .search-bar input,
+      .category-filter select { max-width: 100%; }
+      .modal-content { margin: 1rem; padding: 1.5rem; max-width: 90%; }
+      .modal-content h2 { font-size: 1.5rem; }
+      .card .reply-btn, .card .delete-btn { padding: 0.6rem; font-size: 0.95rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <h1 class="logo">UniHive 🐝</h1>
+    <div class="user-info">
+      <div class="tooltip notification-icon" onclick="toggleNotifications()">
+        🔔 <span id="notification-count">0</span>
+        <span class="tooltiptext">View Notifications</span>
+      </div>
+      <span id="username-display" aria-live="polite">👤 Loading...</span>
+      <button onclick="toggleDarkMode()" class="tooltip" aria-label="Toggle Dark Mode">
+        🌙 <span class="tooltiptext">Toggle Dark Mode</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="notification-dropdown" class="notification-dropdown">
+    <h3>Notifications</h3>
+    <ul id="notification-list"></ul>
+  </div>
+
+  <div id="mySidenav" class="sidebar">
+    <span class="close-btn" onclick="toggleSidebar()" aria-label="Close Sidebar">×</span>
+    <h2>🐝 UniHive</h2>
+    <a href="dashboard.html">Home</a>
+    <a href="buy.html">Buy & Sell</a>
+    <a href="discuss.html" class="active">Discussion Forum</a>
+    <a href="events.html">Events</a>
+    <a href="clubs.html">Clubs</a>
+    <a href="elibrary.html">Library</a>
+    <a href="#" onclick="firebase.auth().signOut()">Logout</a>
+  </div>
+
+  <div class="main">
+    <div class="success-message" id="success-message"></div>
+    <div class="error-message" id="error-message"></div>
+    <button class="toggle-btn tooltip" onclick="toggleSidebar()" aria-label="Toggle Menu">
+      <div class="hamburger-line"></div>
+      <div class="hamburger-line"></div>
+      <div class="hamburger-line"></div>
+      <span class="tooltiptext">Open Menu</span>
+    </button>
+    <div class="header">
+      <h1>Discussion Forum</h1>
+      <button class="list-btn tooltip" onclick="openModal()" aria-label="Create New Thread" disabled>
+        Create Thread <span class="tooltiptext">Start a new discussion</span>
+      </button>
+    </div>
+
+    <div class="search-filter">
+      <div class="search-bar">
+        <input type="text" id="search-input" placeholder="Search threads..." aria-label="Search threads" />
+      </div>
+      <div class="category-filter">
+        <select id="category-filter" aria-label="Filter by category">
+          <option value="all">All Categories</option>
+          <option value="General">General</option>
+          <option value="Academics">Academics</option>
+          <option value="Projects">Projects</option>
+          <option value="Off-Topic">Off-Topic</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid" id="thread-grid"></div>
+
+    <div class="modal" id="create-thread-modal" role="dialog" aria-labelledby="modal-title">
+      <div class="modal-content">
+        <span class="close-icon" onclick="closeModal()" aria-label="Close Modal">×</span>
+        <h2 id="modal-title">Create New Thread 🐝</h2>
+        <form id="create-thread-form">
+          <div>
+            <label for="thread-title">Title</label>
+            <input type="text" id="thread-title" placeholder="e.g., Study Group for Finals" required aria-required="true" />
+          </div>
+          <div>
+            <label for="thread-category">Category</label>
+            <select id="thread-category" required aria-required="true">
+              <option value="" disabled selected>Select a category</option>
+              <option value="General">General</option>
+              <option value="Academics">Academics</option>
+              <option value="Projects">Projects</option>
+              <option value="Off-Topic">Off-Topic</option>
+            </select>
+          </div>
+          <div>
+            <label for="thread-content">Content</label>
+            <textarea id="thread-content" placeholder="What's on your mind?" required aria-required="true"></textarea>
+          </div>
+          <div>
+            <label for="thread-duration">Active Duration (days)</label>
+            <input type="number" id="thread-duration" min="1" max="365" placeholder="e.g., 7" required aria-required="true" />
+          </div>
+          <div class="btn-group">
+            <button type="button" class="cancel-btn" onclick="closeModal()">Cancel</button>
+            <button type="button" class="submit-btn" onclick="createThread()">Create Thread</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyBnPy5bVzYj53TpBfeXIM--aLue4qgLJtU",
+      authDomain: "unihive-a8959.firebaseapp.com",
+      projectId: "unihive-a8959",
+      storageBucket: "unihive-a8959.appspot.com",
+      messagingSenderId: "19484479047",
+      appId: "1:19484479047:web:b8b61a81d65fe479d5ab62",
+      measurementId: "G-3SNN0K0BV2"
+    };
+
+    let auth, db;
+    try {
+      firebase.initializeApp(firebaseConfig);
+      auth = firebase.auth();
+      db = firebase.firestore();
+      db.enablePersistence().catch(error => {
+        console.warn("Firestore offline persistence failed:", error);
+      });
+    } catch (error) {
+      console.error("Firebase initialization failed:", error);
+      showErrorMessage("Failed to initialize Firebase: " + error.message);
+    }
+
+    let threads = [];
+    let notifications = [];
+    let currentUser = "Guest";
+    let currentUserId = null;
+
+    // Example thread data for guest users
+    const exampleThreads = [
+      {
+        id: "example1",
+        title: "Welcome to UniHive!",
+        category: "General",
+        content: "Share your ideas and connect with the community!",
+        author: "Admin",
+        authorId: "admin",
+        timestamp: new Date().toISOString(),
+        durationDays: 7,
+        expiryTimestamp: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        replyCount: 2
+      },
+      {
+        id: "example2",
+        title: "Project Collaboration",
+        category: "Projects",
+        content: "Looking for teammates for a research project.",
+        author: "StudentX",
+        authorId: "studentx",
+        timestamp: new Date().toISOString(),
+        durationDays: 14,
+        expiryTimestamp: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        replyCount: 1
+      }
+    ];
+
+    // Fetch username and update UI
+    auth.onAuthStateChanged(user => {
+      const display = document.getElementById("username-display");
+      const createBtn = document.querySelector(".list-btn");
+      createBtn.disabled = !user;
+      if (user) {
+        console.log("User signed in:", user.uid);
+        currentUserId = user.uid;
+        db.collection("users").doc(user.uid).get().then(doc => {
+          if (doc.exists) {
+            const username = doc.data().username;
+            display.textContent = `👤 ${username}`;
+            currentUser = username;
+            console.log("Username set:", username);
+          } else {
+            console.warn("User document not found for UID:", user.uid);
+            display.textContent = "👤 Unknown User";
+            currentUser = "Unknown User";
+          }
+          fetchThreads();
+          fetchNotifications();
+        }).catch(error => {
+          console.error("Error fetching user data:", error);
+          display.textContent = "👤 Error";
+          currentUser = "Guest";
+          currentUserId = null;
+          fetchThreads();
+          fetchNotifications();
+        });
+      } else {
+        console.log("No user signed in.");
+        display.textContent = "👤 Guest";
+        currentUser = "Guest";
+        currentUserId = null;
+        threads = exampleThreads;
+        renderThreads();
+        fetchNotifications();
+      }
+    });
+
+    // Detect online/offline status
+    window.addEventListener("online", () => {
+      document.getElementById("offline-message")?.remove();
+      fetchThreads();
+    });
+    window.addEventListener("offline", () => {
+      const msg = document.createElement("div");
+      msg.id = "offline-message";
+      msg.className = "error-message show";
+      msg.textContent = "You are offline. Some features may be unavailable.";
+      document.querySelector(".main").prepend(msg);
+    });
+
+    // Fetch threads from Firestore
+    function fetchThreads(query = "", category = "all") {
+      if (window.threadListener) window.threadListener();
+      
+      const threadGrid = document.getElementById("thread-grid");
+      threadGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #ca8a04;">Loading threads...</div>';
+      
+      let threadQuery = db.collection("threads").orderBy("timestamp", "desc");
+
+      window.threadListener = threadQuery.onSnapshot(snapshot => {
+        const now = new Date().toISOString();
+        threads = snapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter(thread => !thread.expiryTimestamp || thread.expiryTimestamp > now);
+        Promise.all(threads.map(async thread => {
+          const replySnapshot = await db.collection("threads").doc(thread.id).collection("replies").get();
+          thread.replyCount = replySnapshot.size;
+          thread.replies = replySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          return thread;
+        })).then(() => {
+          renderThreads(query, category);
+        });
+      }, error => {
+        console.error("Error fetching threads:", error);
+        threadGrid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #6b7280;">Failed to load threads.</p>';
+        showErrorMessage("Failed to load threads: " + error.message);
+      });
+    }
+
+    function renderThreads(query = "", category = "all") {
+      const threadGrid = document.getElementById("thread-grid");
+      let filteredThreads = threads;
+
+      if (query) {
+        filteredThreads = filteredThreads.filter(
+          thread =>
+            thread.title.toLowerCase().includes(query.toLowerCase()) ||
+            thread.content.toLowerCase().includes(query.toLowerCase())
+        );
+      }
+
+      if (category !== "all") {
+        filteredThreads = filteredThreads.filter(thread => thread.category === category);
+      }
+
+      threadGrid.innerHTML =
+        filteredThreads.length > 0
+          ? filteredThreads
+              .map(
+                thread => `
+                <div class="card">
+                  <h3>${thread.title}</h3>
+                  <p class="meta">Posted by ${thread.author} • ${new Date(thread.timestamp).toLocaleString()} • ${thread.replyCount || 0} replies • Expires: ${thread.expiryTimestamp ? new Date(thread.expiryTimestamp).toLocaleString() : 'Never'}</p>
+                  <p><strong>${thread.category}</strong></p>
+                  <p>${thread.content}</p>
+                  <div class="reply-section">
+                    ${(thread.replies || [])
+                      .map(
+                        reply => `
+                          <p><strong>${reply.author}:</strong> ${reply.content} <em>(${new Date(reply.timestamp).toLocaleString()})</em></p>
+                        `
+                      )
+                      .join("")}
+                  </div>
+                  <div class="reply-form">
+                    <input type="text" class="reply-input" placeholder="Add a reply..." aria-label="Reply to thread" data-thread-id="${thread.id}" />
+                    <button class="reply-btn" onclick="addReply('${thread.id}')">Reply</button>
+                  </div>
+                  ${auth.currentUser && thread.authorId === currentUserId ? `
+                    <button class="delete-btn" onclick="deleteThread('${thread.id}', '${thread.title}')">End Thread</button>
+                  ` : ''}
+                </div>
+              `
+              )
+              .join("")
+          : '<p style="grid-column: 1 / -1; text-align: center; color: #6b7280;">No threads found.</p>';
+    }
+
+    async function createThread() {
+      const title = document.getElementById("thread-title").value.trim();
+      const category = document.getElementById("thread-category").value;
+      const content = document.getElementById("thread-content").value.trim();
+      const durationDays = parseInt(document.getElementById("thread-duration").value);
+      const submitBtn = document.querySelector("#create-thread-form .submit-btn");
+      const timestamp = new Date().toISOString();
+      let expiryTimestamp = null;
+
+      if (!auth.currentUser) {
+        showErrorMessage("Please sign in to create a thread.");
+        return;
+      }
+      if (!title || !category || !content || isNaN(durationDays)) {
+        showErrorMessage("Please fill in all required fields: Title, Category, Content, Duration.");
+        return;
+      }
+      if (durationDays < 1 || durationDays > 365) {
+        showErrorMessage("Duration must be between 1 and 365 days.");
+        return;
+      }
+      if (!navigator.onLine) {
+        showErrorMessage("You are offline. Please connect to the internet to create a thread.");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Creating...";
+
+      try {
+        if (durationDays) {
+          const expiryDate = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
+          expiryTimestamp = expiryDate.toISOString();
+        }
+        await db.collection("threads").add({
+          title,
+          category,
+          content,
+          author: currentUser,
+          authorId: auth.currentUser.uid,
+          timestamp,
+          durationDays,
+          expiryTimestamp
+        });
+        showSuccessMessage("Thread created successfully! 🐝");
+        notifyUsers(`New thread created: ${title}`);
+        closeModal();
+        fetchThreads();
+      } catch (error) {
+        console.error("Error creating thread:", error);
+        showErrorMessage("Failed to create thread: " + error.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Create Thread";
+      }
+    }
+
+    async function deleteThread(threadId, threadTitle) {
+      if (!auth.currentUser) {
+        showErrorMessage("Please sign in to delete a thread.");
+        return;
+      }
+      if (!navigator.onLine) {
+        showErrorMessage("You are offline. Please connect to the internet to delete a thread.");
+        return;
+      }
+
+      if (!confirm(`Are you sure you want to delete the thread "${threadTitle}"?`)) {
+        return;
+      }
+
+      try {
+        const repliesRef = db.collection("threads").doc(threadId).collection("replies");
+        const replySnapshot = await repliesRef.get();
+        const batch = db.batch();
+        replySnapshot.docs.forEach(doc => {
+          batch.delete(doc.ref);
+        });
+        await batch.commit();
+        await db.collection("threads").doc(threadId).delete();
+        showSuccessMessage("Thread deleted successfully! 🐝");
+        notifyUsers(`Thread deleted: ${threadTitle}`);
+        fetchThreads();
+      } catch (error) {
+        console.error("Error deleting thread:", error);
+        showErrorMessage("Failed to delete thread: " + error.message);
+      }
+    }
+
+    async function addReply(threadId) {
+      const input = document.querySelector(`.reply-input[data-thread-id="${threadId}"]`);
+      const content = input.value.trim();
+      if (!auth.currentUser) {
+        showErrorMessage("Please sign in to reply to a thread.");
+        return;
+      }
+      if (!content) {
+        showErrorMessage("Please enter a reply.");
+        return;
+      }
+      if (!navigator.onLine) {
+        showErrorMessage("You are offline. Please connect to the internet to reply.");
+        return;
+      }
+
+      try {
+        const thread = threads.find(t => t.id === threadId);
+        if (thread.expiryTimestamp && new Date(thread.expiryTimestamp) < new Date()) {
+          showErrorMessage("This thread has expired and cannot accept new replies.");
+          return;
+        }
+        await db.collection("threads").doc(threadId).collection("replies").add({
+          author: currentUser,
+          content,
+          timestamp: new Date().toISOString()
+        });
+        input.value = "";
+        notifyUsers(`New reply to thread ID ${threadId} by ${currentUser}`);
+        fetchThreads();
+      } catch (error) {
+        console.error("Error adding reply:", error);
+        showErrorMessage("Failed to add reply: " + error.message);
+      }
+    }
+
+    function openModal() {
+      if (!auth.currentUser) {
+        showErrorMessage("Please sign in to create a thread.");
+        return;
+      }
+      const modal = document.getElementById("create-thread-modal");
+      modal.classList.add("open");
+    }
+
+    function closeModal() {
+      const modal = document.getElementById("create-thread-modal");
+      modal.classList.remove("open");
+      document.getElementById("create-thread-form").reset();
+      const submitBtn = document.querySelector("#create-thread-form .submit-btn");
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Create Thread";
+    }
+
+    function toggleSidebar() {
+      console.log("Toggling sidebar.");
+      const sidebar = document.getElementById("mySidenav");
+      const mainContent = document.querySelector(".main");
+      sidebar.classList.toggle("open");
+      mainContent.classList.toggle("open");
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark-mode");
+      const button = document.querySelector(".navbar .user-info button");
+      button.textContent = document.body.classList.contains("dark-mode") ? "☀️" : "🌙";
+      localStorage.setItem("darkMode", document.body.classList.contains("dark-mode"));
+    }
+
+    async function notifyUsers(message) {
+      if (!auth.currentUser) return;
+      try {
+        console.log("Adding notification:", message);
+        await db.collection("notifications").add({
+          message,
+          userId: auth.currentUser.uid,
+          read: false,
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error("Error adding notification:", error);
+      }
+    }
+
+    function fetchNotifications() {
+      if (!auth.currentUser) return;
+      console.log("Fetching notifications for user:", auth.currentUser.uid);
+      db.collection("notifications")
+        .where("userId", "==", auth.currentUser.uid)
+        .orderBy("timestamp", "desc")
+        .onSnapshot(snapshot => {
+          notifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          updateNotificationCount();
+          if (document.getElementById("notification-dropdown").style.display === "block") {
+            renderNotifications();
+          }
+        }, error => {
+          console.error("Error fetching notifications:", error);
+        });
+    }
+
+    function updateNotificationCount() {
+      const unread = notifications.filter(n => !n.read).length;
+      document.getElementById("notification-count").textContent = unread || 0;
+    }
+
+    function renderNotifications() {
+      const list = document.getElementById("notification-list");
+      list.innerHTML = "";
+      notifications.forEach((notif, index) => {
+        const li = document.createElement("li");
+        li.textContent = notif.message;
+        if (!notif.read) {
+          li.className = "unread";
+          li.onclick = async () => {
+            try {
+              await db.collection("notifications").doc(notif.id).update({ read: true });
+            } catch (error) {
+              console.error("Error marking notification as read:", error);
+            }
+          };
+        }
+        list.appendChild(li);
+      });
+    }
+
+    function toggleNotifications() {
+      console.log("Toggling notifications dropdown.");
+      const dropdown = document.getElementById("notification-dropdown");
+      dropdown.style.display = dropdown.style.display === "none" ? "block" : "none";
+      if (dropdown.style.display === "block") { renderNotifications(); }
+    }
+
+    function showSuccessMessage(message) {
+      console.log("Showing success message:", message);
+      const successMsg = document.getElementById("success-message");
+      successMsg.textContent = message;
+      successMsg.classList.add("show");
+      setTimeout(() => successMsg.classList.remove("show"), 3000);
+    }
+
+    function showErrorMessage(message) {
+      console.log("Showing error message:", message);
+      const errorMsg = document.getElementById("error-message");
+      errorMsg.textContent = message;
+      errorMsg.classList.add("show");
+      setTimeout(() => errorMsg.classList.remove("show"), 5000);
+    }
+
+    // Event Listeners
+    document.addEventListener("DOMContentLoaded", () => {
+      if (localStorage.getItem("darkMode") === "true") {
+        document.body.classList.add("dark-mode");
+        document.querySelector(".navbar .user-info button").textContent = "☀️";
+      }
+
+      document.getElementById("search-input").addEventListener("input", e => {
+        const category = document.getElementById("category-filter").value;
+        fetchThreads(e.target.value, category);
+      });
+
+      document.getElementById("category-filter").addEventListener("change", e => {
+        const query = document.getElementById("search-input").value;
+        fetchThreads(query, e.target.value);
+      });
+    });
+  </script>
+</body>
+</html>
