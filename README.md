@@ -1,19 +1,65 @@
 # UNIHIVE
 # UniHive – College Website Frontend
 
-**UniHive** is a responsive frontend college website designed to centralize academic resources and student services.  
-It provides an intuitive interface for students to access the e-library, events, clubs, and a buy & sell section.
+**UniHive** is a responsive college website frontend designed to centralize academic resources and student services in one platform.
+The interface allows students to easily navigate between the e-library, campus events, clubs, and a student marketplace, creating a unified digital hub for campus life.
+This project currently demonstrates the frontend interface and user experience of the UniHive platform.
 
 
 # Key Features
+(i) E-Library Dashboard
 
-- **E-Library Dashboard** – Browse academic resources by subject and year.  
-- **Events & Clubs Section** – View upcoming college events and club activities.  
-- **Buy & Sell Section** – Students can post items for sale or exchange.  
-- **Responsive Design** – Works seamlessly on desktops, tablets, and mobile devices.  
+Browse academic resources organized by subject and academic year
+
+Coding resources categorized by programming language
+
+Dashboard-style layout for easy navigation
+
+(ii) Smart Search Interface
+
+Search bar for quickly finding books or resources
+
+Designed to support future backend search integration
+
+(iii) Voice Search UI
+
+Interface support for voice-based search functionality
+
+Enables faster access to resources without typing
+
+(iv) Notification System
+
+Animated notifications for updates and reminders
+
+Designed to support future smart notification features
+
+(v) Student Dashboard
+
+The UniHive Dashboard acts as a central hub connecting multiple campus services:
+
+• Library
+
+• Buy & Sell Marketplace
+
+• Discussion Forum
+
+• Events
+
+• Clubs
+
+(vi) Dark Mode
+
+Toggle between light and dark themes
+
+Improves usability during extended usage
+
+(vii) Responsive Design
+
+Works seamlessly across desktops, tablets, and mobile devices
 
 # Technologies Used
 
 - **HTML** – Structure and content  
 - **CSS** – Styling and layout, responsive design, animations.
+- **JavaScript** – Interactive UI components
 
