@@ -9,29 +9,29 @@ This project currently demonstrates the frontend interface and user experience o
 # Key Features
 (i) E-Library Dashboard
 
-Browse academic resources organized by subject and academic year
+⁃ Browse academic resources organized by subject and academic year
 
-Coding resources categorized by programming language
+⁃ Coding resources categorized by programming language
 
-Dashboard-style layout for easy navigation
+⁃ Dashboard-style layout for easy navigation
 
 (ii) Smart Search Interface
 
-Search bar for quickly finding books or resources
+⁃ Search bar for quickly finding books or resources
 
-Designed to support future backend search integration
+⁃ Designed to support future backend search integration
 
 (iii) Voice Search UI
 
-Interface support for voice-based search functionality
+⁃ Interface support for voice-based search functionality
 
-Enables faster access to resources without typing
+⁃ Enables faster access to resources without typing
 
 (iv) Notification System
 
-Animated notifications for updates and reminders
+⁃ Animated notifications for updates and reminders
 
-Designed to support future smart notification features
+⁃ Designed to support future smart notification features
 
 (v) Student Dashboard
 
@@ -49,17 +49,18 @@ The UniHive Dashboard acts as a central hub connecting multiple campus services:
 
 (vi) Dark Mode
 
-Toggle between light and dark themes
+⁃ Toggle between light and dark themes
 
-Improves usability during extended usage
+⁃ Improves usability during extended usage
 
 (vii) Responsive Design
 
-Works seamlessly across desktops, tablets, and mobile devices
+⁃ Works seamlessly across desktops, tablets, and mobile devices
 
 # Technologies Used
 
 - **HTML** – Structure and content  
 - **CSS** – Styling and layout, responsive design, animations.
+
 - **JavaScript** – Interactive UI components
 
